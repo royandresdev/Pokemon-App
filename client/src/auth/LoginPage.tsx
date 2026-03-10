@@ -28,25 +28,25 @@ const LoginPage = () => {
           }
         }}
       >
-        {({ status, values, handleSubmit }) => (
+        {({ status, values, handleSubmit, isSubmitting }) => (
           <form onSubmit={handleSubmit}>
             <h1>Iniciar sesión</h1>
             <div>
               <label htmlFor="username">Usuario:</label>
-              <Field type="text" id="username" name="username" />
+              <Field type="text" id="username" name="username" disabled={isSubmitting} />
               <ErrorMessage name="username" component="p" />
             </div>
             <div>
               <label htmlFor="password">Contraseña:</label>
-              <Field type="password" id="password" name="password" />
+              <Field type="password" id="password" name="password" disabled={isSubmitting} />
               <ErrorMessage name="password" component="p" />
             </div>
             {status && <p>{status}</p>}
             <button
               type="submit"
-              disabled={!values.username.trim() || !values.password.trim()}
+              disabled={!values.username.trim() || !values.password.trim() || isSubmitting}
             >
-              Ingresar
+              {isSubmitting ? "Cargando..." : "Ingresar"}
             </button>
           </form>
         )}

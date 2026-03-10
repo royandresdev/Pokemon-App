@@ -64,4 +64,19 @@ describe("AuthPage", () => {
     expect(errorMessage).toBeInTheDocument();
   });
 
+  it("Debe deshabilitar inputs y mostrar estado de carga al iniciar sesión", async () => {
+    render(<LoginPage />);
+
+    const usernameInput = screen.getByLabelText("Usuario:");
+    const passwordInput = screen.getByLabelText("Contraseña:");
+    const loginButton = screen.getByRole("button", { name: "Ingresar" });
+
+    fireEvent.change(usernameInput, { target: { value: "admin" } });
+    fireEvent.change(passwordInput, { target: { value: "admin" } });
+    fireEvent.click(loginButton);
+
+    expect(usernameInput).toBeDisabled();
+    expect(passwordInput).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Cargando..." })).toBeDisabled();
+  });
 })
