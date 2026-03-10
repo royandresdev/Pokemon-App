@@ -1,5 +1,4 @@
 function App() {
-
   return (
     <div>
       <h1>Pokemon App</h1>
