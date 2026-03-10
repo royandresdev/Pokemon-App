@@ -1,8 +1,8 @@
+import LoginPage from "./auth/LoginPage"
+
 function App() {
   return (
-    <div>
-      <h1>Pokemon App</h1>
-    </div>
+    <LoginPage />
   )
 }
 
