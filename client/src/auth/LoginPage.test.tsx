@@ -34,5 +34,34 @@ describe("AuthPage", () => {
 
     expect(usernameErrorMessage).toBeInTheDocument();
     expect(passwordErrorMessage).toBeInTheDocument();
-  })
+  });
+
+  it("Debe habilitar el botón cuando usuario y contraseña están completos", () => {
+    render(<LoginPage />);
+
+    const usernameInput = screen.getByLabelText("Usuario:");
+    const passwordInput = screen.getByLabelText("Contraseña:");
+    const loginButton = screen.getByRole("button", { name: "Ingresar" });
+
+    fireEvent.change(usernameInput, { target: { value: "ash" } });
+    fireEvent.change(passwordInput, { target: { value: "pikachu123" } });
+
+    expect(loginButton).toBeEnabled();
+  });
+
+  it("Debe mostrar un mensaje de error si las credenciales no son válidas", async () => {
+    render(<LoginPage />);
+
+    const usernameInput = screen.getByLabelText("Usuario:");
+    const passwordInput = screen.getByLabelText("Contraseña:");
+    const loginButton = screen.getByRole("button", { name: "Ingresar" });
+
+    fireEvent.change(usernameInput, { target: { value: "usuario_invalido" } });
+    fireEvent.change(passwordInput, { target: { value: "password_invalida" } });
+    fireEvent.click(loginButton);
+
+    const errorMessage = await screen.findByText("Credenciales inválidas");
+    expect(errorMessage).toBeInTheDocument();
+  });
+
 })
