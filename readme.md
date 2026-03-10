@@ -4,6 +4,16 @@
 Lee cuidadosamente todos los requisitos y crea un producto que cumpla con las expectativas. Debes crear un repositorio público en GitHub para subir el ejercicio y compartir el enlace en el campo de respuesta.
 Tu desarrollo debe estar guiado por una historia de usuario informal que tú mismo crearás, y que debe incluirse en tu presentación.
 
+## Características del desarrollo
+- El proyecto incluye tanto frontend como backend.
+- Se usará TDD
+- Principios SOLID
+- Arquitectura limpia
+- Uso de herramientas GenAI para optimizar el desarrollo
+- Diseño responsivo y SEO
+- Buen manejo de estado y rutas protegidas
+- Paginación de resultados
+
 ## Frontend
 ### Pantalla de inicio de sesión:
 - Las credenciales consisten en un formulario de usuario/contraseña. Debes validar las credenciales en un backend que tienes que construir. (usuario: admin, contraseña: admin; cualquier otra combinación debe considerarse incorrecta). Muestra todas las validaciones que consideres necesarias.
