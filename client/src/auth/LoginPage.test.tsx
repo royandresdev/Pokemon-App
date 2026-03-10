@@ -18,18 +18,21 @@ describe("AuthPage", () => {
     expect(loginButton).toBeDisabled();
   });
 
-  it("Debe renderizar un mensaje de error si escribió mal las credenciales", () => {
+  it("Debe renderizar los mensajes de error si entra y sale de los inputs", async () => {
     render(<LoginPage />);
 
     const usernameInput = screen.getByLabelText("Usuario:");
     const passwordInput = screen.getByLabelText("Contraseña:");
-    const loginButton = screen.getByRole("button", { name: "Ingresar" });
 
-    fireEvent.change(usernameInput, { target: { value: "usuario_incorrecto" } });
-    fireEvent.change(passwordInput, { target: { value: "contraseña_incorrecta" } });
-    fireEvent.click(loginButton);
+    fireEvent.focus(usernameInput);
+    fireEvent.blur(usernameInput);
+    fireEvent.focus(passwordInput);
+    fireEvent.blur(passwordInput);
 
-    const errorMessage = screen.getByText("Credenciales incorrectas");
-    expect(errorMessage).toBeInTheDocument();
+    const usernameErrorMessage = await screen.findByText("Ingrese un usuario");
+    const passwordErrorMessage = await screen.findByText("Ingrese una contraseña");
+
+    expect(usernameErrorMessage).toBeInTheDocument();
+    expect(passwordErrorMessage).toBeInTheDocument();
   })
 })
