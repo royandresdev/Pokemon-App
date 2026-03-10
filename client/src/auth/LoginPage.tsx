@@ -5,8 +5,6 @@ const initialValues = {
   password: "",
 }
 
-const LOGIN_URL = "http://localhost:3000/login";
-
 const LoginPage = () => {
   return (
     <main>
@@ -25,9 +23,10 @@ const LoginPage = () => {
         }}
         onSubmit={async (values, { setStatus, setSubmitting }) => {
           setStatus(undefined);
+          const loginUrl = `${import.meta.env.VITE_API_URL}/login`;
 
           try {
-            const response = await fetch(LOGIN_URL, {
+            const response = await fetch(loginUrl, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

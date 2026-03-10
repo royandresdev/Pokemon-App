@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import LoginPage from "./LoginPage";
 
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("AuthPage", () => {
@@ -55,6 +56,8 @@ describe("AuthPage", () => {
   });
 
   it("Debe mostrar un mensaje de error si las credenciales no son válidas", async () => {
+    vi.stubEnv("VITE_API_URL", "http://test-api");
+
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       json: async () => ({ message: "Credenciales inválidas" }),
@@ -72,15 +75,17 @@ describe("AuthPage", () => {
     fireEvent.change(passwordInput, { target: { value: "password_invalida" } });
     fireEvent.click(loginButton);
 
-    expect(fetchMock).toHaveBeenCalledWith("http://localhost:3000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: "usuario_invalido",
-        password: "password_invalida",
-      }),
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("http://test-api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: "usuario_invalido",
+          password: "password_invalida",
+        }),
+      });
     });
 
     const errorMessage = await screen.findByText("Credenciales inválidas");
@@ -88,6 +93,8 @@ describe("AuthPage", () => {
   });
 
   it("Debe deshabilitar inputs y mostrar estado de carga al iniciar sesión", async () => {
+    vi.stubEnv("VITE_API_URL", "http://test-api");
+
     const fetchMock = vi.fn(() => new Promise(() => undefined));
 
     vi.stubGlobal("fetch", fetchMock);
