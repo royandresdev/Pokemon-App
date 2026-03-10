@@ -5,6 +5,8 @@ const initialValues = {
   password: "",
 }
 
+const LOGIN_URL = "http://localhost:3000/login";
+
 const LoginPage = () => {
   return (
     <main>
@@ -21,9 +23,26 @@ const LoginPage = () => {
           }
           return errors;
         }}
-        onSubmit={(values, { setStatus, setSubmitting }) => {
-          if (values.username !== "admin" || values.password !== "admin") {
-            setStatus("Credenciales inválidas");
+        onSubmit={async (values, { setStatus, setSubmitting }) => {
+          setStatus(undefined);
+
+          try {
+            const response = await fetch(LOGIN_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(values),
+            });
+
+            if (!response.ok) {
+              const payload = await response.json() as { message?: string };
+
+              setStatus(payload.message ?? "Credenciales inválidas");
+            }
+          } catch {
+            setStatus("No se pudo conectar con el servidor");
+          } finally {
             setSubmitting(false);
           }
         }}

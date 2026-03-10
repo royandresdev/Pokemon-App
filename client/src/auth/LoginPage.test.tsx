@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import LoginPage from "./LoginPage";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("AuthPage", () => {
   it("Debe renderizar el formulario de inicio de sesión", () => {
@@ -50,6 +55,13 @@ describe("AuthPage", () => {
   });
 
   it("Debe mostrar un mensaje de error si las credenciales no son válidas", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ message: "Credenciales inválidas" }),
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
     render(<LoginPage />);
 
     const usernameInput = screen.getByLabelText("Usuario:");
@@ -60,11 +72,26 @@ describe("AuthPage", () => {
     fireEvent.change(passwordInput, { target: { value: "password_invalida" } });
     fireEvent.click(loginButton);
 
+    expect(fetchMock).toHaveBeenCalledWith("http://localhost:3000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: "usuario_invalido",
+        password: "password_invalida",
+      }),
+    });
+
     const errorMessage = await screen.findByText("Credenciales inválidas");
     expect(errorMessage).toBeInTheDocument();
   });
 
   it("Debe deshabilitar inputs y mostrar estado de carga al iniciar sesión", async () => {
+    const fetchMock = vi.fn(() => new Promise(() => undefined));
+
+    vi.stubGlobal("fetch", fetchMock);
+
     render(<LoginPage />);
 
     const usernameInput = screen.getByLabelText("Usuario:");
