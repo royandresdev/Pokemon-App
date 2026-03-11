@@ -7,9 +7,17 @@ global.fetch = fetchMock as typeof fetch;
 describe("pokemonService", () => {
   beforeEach(() => {
     fetchMock.mockReset();
+    jest.resetModules();
   });
 
   it("devuelve la estructura paginada de pokemons", async () => {
+    jest.doMock("../config/env", () => ({
+      getEnvConfig: () => ({
+        port: 3000,
+        pokeApiUrl: "https://example.com/pokemon",
+      }),
+    }));
+
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -31,6 +39,8 @@ describe("pokemonService", () => {
 
     const result = await getPokemonList();
 
+    expect(fetchMock).toHaveBeenCalledWith("https://example.com/pokemon?limit=20");
+
     expect(result).toEqual(
       expect.objectContaining({
         count: "1350",
@@ -42,6 +52,13 @@ describe("pokemonService", () => {
   });
 
   it("devuelve pokemons con name y url", async () => {
+    jest.doMock("../config/env", () => ({
+      getEnvConfig: () => ({
+        port: 3000,
+        pokeApiUrl: "https://example.com/pokemon",
+      }),
+    }));
+
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -75,6 +92,13 @@ describe("pokemonService", () => {
   });
 
   it("lanza un error si PokeAPI responde con error", async () => {
+    jest.doMock("../config/env", () => ({
+      getEnvConfig: () => ({
+        port: 3000,
+        pokeApiUrl: "https://example.com/pokemon",
+      }),
+    }));
+
     fetchMock.mockResolvedValue({
       ok: false,
     });

@@ -1,11 +1,12 @@
 import type interfaces = require("../../shared/interfaces");
 
-const { POKEMONS } = require("../data/pokemonList") as {
-  POKEMONS: interfaces.PokemonListResponse;
+const { getEnvConfig } = require("../config/env") as {
+  getEnvConfig: () => { pokeApiUrl: string };
 };
 
 async function getPokemonList(): Promise<interfaces.PokemonListResponse> {
-  const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=20");
+  const { pokeApiUrl } = getEnvConfig();
+  const response = await fetch(`${pokeApiUrl}?limit=20`);
 
   if (!response.ok) {
     throw new Error("Error al obtener la lista de pokemons");
