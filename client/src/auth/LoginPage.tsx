@@ -34,9 +34,10 @@ const LoginPage = () => {
               body: JSON.stringify(values),
             });
 
-            if (!response.ok) {
+            if (response.ok) {
+              localStorage.setItem("auth_user", values.username);
+            } else {
               const payload = await response.json() as { message?: string };
-
               setStatus(payload.message ?? "Credenciales inválidas");
             }
           } catch {

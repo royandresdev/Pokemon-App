@@ -6,6 +6,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
+  localStorage.clear();
 });
 
 describe("AuthPage", () => {
@@ -90,6 +91,25 @@ describe("AuthPage", () => {
 
     const errorMessage = await screen.findByText("Credenciales inválidas");
     expect(errorMessage).toBeInTheDocument();
+  });
+
+  it("Debe guardar el usuario en localStorage tras un login exitoso", async () => {
+    vi.stubEnv("VITE_API_URL", "http://test-api");
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    }));
+
+    render(<LoginPage />);
+
+    fireEvent.change(screen.getByLabelText("Usuario:"), { target: { value: "admin" } });
+    fireEvent.change(screen.getByLabelText("Contraseña:"), { target: { value: "admin" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ingresar" }));
+
+    await waitFor(() => {
+      expect(localStorage.getItem("auth_user")).toBe("admin");
+    });
   });
 
   it("Debe deshabilitar inputs y mostrar estado de carga al iniciar sesión", async () => {
