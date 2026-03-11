@@ -2,10 +2,13 @@ export interface PokemonListResponse {
   count: number | string;
   next: string | null;
   previous: string | null;
-  results: {
-    name: string;
-    url: string;
-  }[];
+  results: PokemonListItem[];
+}
+
+export interface PokemonListItem {
+  name: string;
+  url: string;
+  sprite: string;
 }
 
 export interface Pokemon {

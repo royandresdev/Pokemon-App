@@ -12,6 +12,7 @@ const pokemonListResponseMock: interfaces.PokemonListResponse = {
     {
       name: "bulbasaur",
       url: "https://pokeapi.co/api/v2/pokemon/1/",
+      sprite: "https://example.com/sprites/front.png",
     },
   ],
 };
@@ -137,6 +138,9 @@ describe("API integration", () => {
 
       expect(Array.isArray(body.results)).toBe(true);
       expect(body.results.length).toBeGreaterThan(0);
+      expect(body.results[0]!.sprite).toBe(
+        "https://example.com/sprites/front.png",
+      );
     });
   });
 

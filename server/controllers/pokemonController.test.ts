@@ -8,6 +8,7 @@ const pokemonListResponse: interfaces.PokemonListResponse = {
     {
       name: "bulbasaur",
       url: "https://pokeapi.co/api/v2/pokemon/1/",
+      sprite: "https://example.com/sprites/front.png",
     },
   ],
 };

@@ -70,10 +70,11 @@ describe("pokemonService", () => {
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
       }),
     }));
 
-    fetchMock.mockResolvedValue({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         count: "1350",
@@ -106,17 +107,21 @@ describe("pokemonService", () => {
         results: expect.any(Array),
       }),
     );
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.png");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("devuelve pokemons con name y url", async () => {
+  it("devuelve pokemons con name, url y sprite", async () => {
     jest.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
       }),
     }));
 
-    fetchMock.mockResolvedValue({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         count: "1350",
@@ -145,7 +150,12 @@ describe("pokemonService", () => {
     result.results.forEach((pokemon) => {
       expect(typeof pokemon.name).toBe("string");
       expect(typeof pokemon.url).toBe("string");
+      expect(typeof pokemon.sprite).toBe("string");
     });
+
+    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.png");
+    expect(result.results[1]!.sprite).toBe("https://example.com/sprites/2.png");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("lanza un error si PokeAPI responde con error", async () => {
@@ -153,6 +163,7 @@ describe("pokemonService", () => {
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
       }),
     }));
 
@@ -174,6 +185,7 @@ describe("pokemonService", () => {
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
       }),
     }));
 
