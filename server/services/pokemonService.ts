@@ -1,7 +1,12 @@
 import type interfaces = require("../../shared/interfaces");
 
 const { getEnvConfig } = require("../config/env") as {
-  getEnvConfig: () => { pokeApiUrl: string; pokeApiSpriteUrl: string };
+  getEnvConfig: () => {
+    port: number;
+    pokeApiUrl: string;
+    pokeApiSpriteUrl: string;
+    apiPublicBaseUrl: string;
+  };
 };
 
 function getPokemonIdFromUrl(url: string): string {
@@ -15,11 +20,26 @@ function getPokemonIdFromUrl(url: string): string {
   return pokemonId;
 }
 
+function mapNextToLocalApi(
+  nextUrl: string | null,
+  apiPublicBaseUrl: string,
+): string | null {
+  if (!nextUrl) {
+    return null;
+  }
+
+  const next = new URL(nextUrl);
+  const limit = next.searchParams.get("limit") ?? "20";
+  const offset = next.searchParams.get("offset") ?? "0";
+
+  return `${apiPublicBaseUrl}/pokemons?limit=${limit}&offset=${offset}`;
+}
+
 async function getPokemonList(
   limit: number = 20,
   offset: number = 0,
 ): Promise<interfaces.PokemonListResponse> {
-  const { pokeApiUrl, pokeApiSpriteUrl } = getEnvConfig();
+  const { pokeApiUrl, pokeApiSpriteUrl, apiPublicBaseUrl } = getEnvConfig();
   const response = await fetch(`${pokeApiUrl}?limit=${limit}&offset=${offset}`);
 
   if (!response.ok) {
@@ -35,6 +55,7 @@ async function getPokemonList(
 
   return {
     ...payload,
+    next: mapNextToLocalApi(payload.next, apiPublicBaseUrl),
     results,
   };
 }

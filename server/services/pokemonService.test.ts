@@ -71,6 +71,7 @@ describe("pokemonService", () => {
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
         pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
       }),
     }));
 
@@ -78,7 +79,7 @@ describe("pokemonService", () => {
       ok: true,
       json: async () => ({
         count: "1350",
-        next: null,
+        next: "https://pokeapi.co/api/v2/pokemon?offset=20&limit=20",
         previous: null,
         results: [
           {
@@ -105,7 +106,7 @@ describe("pokemonService", () => {
     expect(result).toEqual(
       expect.objectContaining({
         count: "1350",
-        next: null,
+        next: "http://localhost:3000/pokemons?limit=20&offset=20",
         previous: null,
         results: expect.any(Array),
       }),
@@ -121,6 +122,7 @@ describe("pokemonService", () => {
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
         pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
       }),
     }));
 
@@ -170,6 +172,7 @@ describe("pokemonService", () => {
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
         pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
       }),
     }));
 
@@ -192,6 +195,7 @@ describe("pokemonService", () => {
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
         pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
       }),
     }));
 
@@ -220,6 +224,8 @@ describe("pokemonService", () => {
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
       }),
     }));
 
