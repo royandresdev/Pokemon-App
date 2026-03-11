@@ -135,7 +135,7 @@ describe("endpoint /pokemons", () => {
     });
   });
 
-  it("cada pokemon tiene id, name y url", async () => {
+  it("cada pokemon tiene name y url", async () => {
     await withServer(async (baseUrl) => {
       const response = await fetch(`${baseUrl}/pokemons`);
       const pokemons =
