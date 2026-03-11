@@ -5,11 +5,16 @@ type AppResponse = {
 };
 
 const { getPokemonList } = require("../services/pokemonService") as {
-  getPokemonList: () => unknown;
+  getPokemonList: () => Promise<unknown>;
 };
 
-function listPokemonsController(_request: unknown, response: AppResponse) {
-  return response.status(200).json(getPokemonList());
+async function listPokemonsController(
+  _request: unknown,
+  response: AppResponse,
+) {
+  const pokemonList = await getPokemonList();
+
+  return response.status(200).json(pokemonList);
 }
 
 module.exports = {
