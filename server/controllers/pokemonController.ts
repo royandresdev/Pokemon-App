@@ -1,22 +1,66 @@
+import type interfaces = require("../../shared/interfaces");
+
 type AppResponse = {
   status: (statusCode: number) => {
     json: (payload: unknown) => unknown;
   };
 };
 
-const { getPokemonList } = require("../services/pokemonService") as {
-  getPokemonList: () => Promise<unknown>;
+type ListPokemonsRequest = {
+  query?: {
+    limit?: string;
+    offset?: string;
+  };
 };
 
+const { getPokemonList, getPokemonById } =
+  require("../services/pokemonService") as {
+    getPokemonList: (
+      limit?: number,
+      offset?: number,
+    ) => Promise<interfaces.PokemonListResponse>;
+    getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
+  };
+
+function parsePaginationNumber(
+  value: string | undefined,
+  fallback: number,
+): number {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+    return fallback;
+  }
+
+  return Math.floor(parsedValue);
+}
+
 async function listPokemonsController(
-  _request: unknown,
+  request: ListPokemonsRequest,
   response: AppResponse,
 ) {
-  const pokemonList = await getPokemonList();
+  const limit = parsePaginationNumber(request.query?.limit, 20);
+  const offset = parsePaginationNumber(request.query?.offset, 0);
+  const pokemonList = await getPokemonList(limit, offset);
 
   return response.status(200).json(pokemonList);
 }
 
+async function getPokemonByIdController(
+  request: { params: { id: string } },
+  response: AppResponse,
+) {
+  const { id } = request.params;
+  const pokemon = await getPokemonById(id);
+
+  return response.status(200).json(pokemon);
+}
+
 module.exports = {
   listPokemonsController,
+  getPokemonByIdController,
 };
