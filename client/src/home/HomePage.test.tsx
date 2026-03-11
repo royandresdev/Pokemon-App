@@ -22,10 +22,12 @@ describe("HomePage", () => {
           {
             name: "bulbasaur",
             url: "https://pokeapi.co/api/v2/pokemon/1/",
+            sprite: "https://example.com/sprites/1.png",
           },
           {
             name: "ivysaur",
             url: "https://pokeapi.co/api/v2/pokemon/2/",
+            sprite: "https://example.com/sprites/2.png",
           },
         ],
       }),
@@ -41,6 +43,8 @@ describe("HomePage", () => {
 
     expect(await screen.findByText("bulbasaur")).toBeInTheDocument();
     expect(screen.getByText("ivysaur")).toBeInTheDocument();
+    expect(screen.getByText("#1")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Sprite de bulbasaur" })).toBeInTheDocument();
   });
 
   it("hace fetch del next al entrar el sentinel en viewport y agrega nuevos pokemons", async () => {
@@ -80,6 +84,7 @@ describe("HomePage", () => {
             {
               name: "bulbasaur",
               url: "https://pokeapi.co/api/v2/pokemon/1/",
+              sprite: "https://example.com/sprites/1.png",
             },
           ],
         }),
@@ -94,6 +99,7 @@ describe("HomePage", () => {
             {
               name: "ivysaur",
               url: "https://pokeapi.co/api/v2/pokemon/2/",
+              sprite: "https://example.com/sprites/2.png",
             },
           ],
         }),
@@ -124,5 +130,7 @@ describe("HomePage", () => {
     });
 
     expect(await screen.findByText("ivysaur")).toBeInTheDocument();
+    expect(screen.getByText("#2")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Sprite de ivysaur" })).toBeInTheDocument();
   });
 });

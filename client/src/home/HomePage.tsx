@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PokemonListResponse } from "../../../shared/interfaces";
+import PokemonCard from "./PokemonCard";
 
 const HomePage = () => {
   const [pokemons, setPokemons] = useState<PokemonListResponse["results"]>([]);
@@ -61,7 +62,9 @@ const HomePage = () => {
       <h1>Pokémon App</h1>
       <ul>
         {pokemons.map((pokemon) => (
-          <li key={pokemon.name}>{pokemon.name}</li>
+          <li key={pokemon.name}>
+            <PokemonCard pokemon={pokemon} />
+          </li>
         ))}
       </ul>
       {nextPageUrl && <div ref={sentinelRef} data-testid="infinite-scroll-sentinel" />}
