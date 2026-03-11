@@ -1,3 +1,5 @@
+import type interfaces = require("../shared/interfaces");
+
 const express = require("express");
 const cors = require("cors");
 
@@ -11,6 +13,32 @@ type LoginResponse = {
   status: (statusCode: number) => {
     json: (payload: unknown) => unknown;
   };
+};
+
+type Pokemon = {
+  id: number;
+  name: string;
+  url: string;
+};
+
+const POKEMONS: interfaces.PokemonListResponse = {
+  count: "1350",
+  next: null,
+  previous: null,
+  results: [
+    {
+      name: "bulbasaur",
+      url: "https://pokeapi.co/api/v2/pokemon/1/",
+    },
+    {
+      name: "ivysaur",
+      url: "https://pokeapi.co/api/v2/pokemon/2/",
+    },
+    {
+      name: "venusaur",
+      url: "https://pokeapi.co/api/v2/pokemon/3/",
+    },
+  ],
 };
 
 function createServer() {
@@ -43,6 +71,10 @@ function createServer() {
     }
 
     return response.status(401).json({ message: "Credenciales inválidas" });
+  });
+
+  app.get("/pokemons", (_request: unknown, response: LoginResponse) => {
+    return response.status(200).json(POKEMONS);
   });
 
   return app;
