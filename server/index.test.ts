@@ -63,6 +63,76 @@ describe("CORS", () => {
 });
 
 describe("endpoint login", () => {
+  it("rechaza con 400 si el body contiene campos no permitidos", async () => {
+    const { createServer } = require("./index") as {
+      createServer: () => {
+        listen: (
+          port: number,
+          callback?: () => void,
+        ) => {
+          close: (callback?: () => void) => void;
+          address: () => { port: number } | string | null;
+        };
+      };
+    };
+
+    const app = createServer();
+    const server = app.listen(0);
+    const address = server.address();
+
+    if (!address || typeof address === "string") {
+      server.close();
+      throw new Error("No se pudo obtener un puerto para el test");
+    }
+
+    const response = await fetch(`http://127.0.0.1:${address.port}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: "admin",
+        password: "admin",
+        role: "superadmin",
+      }),
+    });
+
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+
+    expect(response.status).toBe(400);
+  });
+
+  it("rechaza con 400 si el body está vacío o no es un objeto", async () => {
+    const { createServer } = require("./index") as {
+      createServer: () => {
+        listen: (
+          port: number,
+          callback?: () => void,
+        ) => {
+          close: (callback?: () => void) => void;
+          address: () => { port: number } | string | null;
+        };
+      };
+    };
+
+    const app = createServer();
+    const server = app.listen(0);
+    const address = server.address();
+
+    if (!address || typeof address === "string") {
+      server.close();
+      throw new Error("No se pudo obtener un puerto para el test");
+    }
+
+    const response = await fetch(`http://127.0.0.1:${address.port}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([]),
+    });
+
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+
+    expect(response.status).toBe(400);
+  });
+
   it("expone la ruta POST /login", async () => {
     const { createServer } = require("./index") as {
       createServer: () => {
