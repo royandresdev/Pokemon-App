@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import LoginPage from "./LoginPage";
+
+const renderLoginPage = () => {
+  return render(
+    <MemoryRouter>
+      <LoginPage />
+    </MemoryRouter>,
+  );
+};
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -11,7 +20,7 @@ afterEach(() => {
 
 describe("AuthPage", () => {
   it("Debe renderizar el formulario de inicio de sesión", () => {
-    render(<LoginPage />);
+    renderLoginPage();
 
     const formElement = screen.getByText("Iniciar sesión");
 
@@ -19,14 +28,14 @@ describe("AuthPage", () => {
   });
 
   it("No debe poder iniciar sesión con credenciales vacías", () => {
-    render(<LoginPage />);
+    renderLoginPage();
     const loginButton = screen.getByRole("button", { name: "Ingresar" });
 
     expect(loginButton).toBeDisabled();
   });
 
   it("Debe renderizar los mensajes de error si entra y sale de los inputs", async () => {
-    render(<LoginPage />);
+    renderLoginPage();
 
     const usernameInput = screen.getByLabelText("Usuario:");
     const passwordInput = screen.getByLabelText("Contraseña:");
@@ -44,7 +53,7 @@ describe("AuthPage", () => {
   });
 
   it("Debe habilitar el botón cuando usuario y contraseña están completos", () => {
-    render(<LoginPage />);
+    renderLoginPage();
 
     const usernameInput = screen.getByLabelText("Usuario:");
     const passwordInput = screen.getByLabelText("Contraseña:");
@@ -66,7 +75,7 @@ describe("AuthPage", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<LoginPage />);
+    renderLoginPage();
 
     const usernameInput = screen.getByLabelText("Usuario:");
     const passwordInput = screen.getByLabelText("Contraseña:");
@@ -101,7 +110,7 @@ describe("AuthPage", () => {
       json: async () => ({ ok: true }),
     }));
 
-    render(<LoginPage />);
+    renderLoginPage();
 
     fireEvent.change(screen.getByLabelText("Usuario:"), { target: { value: "admin" } });
     fireEvent.change(screen.getByLabelText("Contraseña:"), { target: { value: "admin" } });
@@ -119,7 +128,7 @@ describe("AuthPage", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<LoginPage />);
+    renderLoginPage();
 
     const usernameInput = screen.getByLabelText("Usuario:");
     const passwordInput = screen.getByLabelText("Contraseña:");

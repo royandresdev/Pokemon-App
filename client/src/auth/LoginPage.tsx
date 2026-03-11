@@ -1,4 +1,5 @@
 import { ErrorMessage, Field, Formik } from "formik";
+import { useNavigate } from "react-router-dom";
 
 const initialValues = {
   username: "",
@@ -6,6 +7,8 @@ const initialValues = {
 }
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+
   return (
     <main>
       <Formik
@@ -36,6 +39,7 @@ const LoginPage = () => {
 
             if (response.ok) {
               localStorage.setItem("auth_user", values.username);
+              navigate("/");
             } else {
               const payload = await response.json() as { message?: string };
               setStatus(payload.message ?? "Credenciales inválidas");
