@@ -90,13 +90,16 @@ describe("pokemonService", () => {
     });
 
     const { getPokemonList } = require("./pokemonService") as {
-      getPokemonList: () => Promise<interfaces.PokemonListResponse>;
+      getPokemonList: (
+        limit?: number,
+        offset?: number,
+      ) => Promise<interfaces.PokemonListResponse>;
     };
 
     const result = await getPokemonList();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://example.com/pokemon?limit=20",
+      "https://example.com/pokemon?limit=20&offset=0",
     );
 
     expect(result).toEqual(
@@ -141,7 +144,10 @@ describe("pokemonService", () => {
     });
 
     const { getPokemonList } = require("./pokemonService") as {
-      getPokemonList: () => Promise<interfaces.PokemonListResponse>;
+      getPokemonList: (
+        limit?: number,
+        offset?: number,
+      ) => Promise<interfaces.PokemonListResponse>;
     };
 
     const result = await getPokemonList();

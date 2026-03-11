@@ -15,9 +15,12 @@ function getPokemonIdFromUrl(url: string): string {
   return pokemonId;
 }
 
-async function getPokemonList(): Promise<interfaces.PokemonListResponse> {
+async function getPokemonList(
+  limit: number = 20,
+  offset: number = 0,
+): Promise<interfaces.PokemonListResponse> {
   const { pokeApiUrl, pokeApiSpriteUrl } = getEnvConfig();
-  const response = await fetch(`${pokeApiUrl}?limit=20`);
+  const response = await fetch(`${pokeApiUrl}?limit=${limit}&offset=${offset}`);
 
   if (!response.ok) {
     throw new Error("Error al obtener la lista de pokemons");
