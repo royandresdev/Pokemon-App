@@ -17,6 +17,20 @@ async function getPokemonList(): Promise<interfaces.PokemonListResponse> {
   return payload;
 }
 
+async function getPokemonById(id: string): Promise<interfaces.Pokemon> {
+  const { pokeApiUrl } = getEnvConfig();
+  const response = await fetch(`${pokeApiUrl}/${id}`);
+
+  if (!response.ok) {
+    throw new Error("Error al obtener el pokemon");
+  }
+
+  const payload = (await response.json()) as interfaces.Pokemon;
+
+  return payload;
+}
+
 module.exports = {
   getPokemonList,
+  getPokemonById,
 };

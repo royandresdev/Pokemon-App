@@ -16,18 +16,64 @@ const pokemonListResponseMock: interfaces.PokemonListResponse = {
   ],
 };
 
+const pokemonResponseMock: interfaces.Pokemon = {
+  abilities: [
+    {
+      ability: { name: "overgrow", url: "https://example.com/ability/65" },
+      is_hidden: false,
+      slot: 1,
+    },
+  ],
+  base_experience: 64,
+  cries: {
+    latest: "https://example.com/cries/latest.ogg",
+    legacy: "https://example.com/cries/legacy.ogg",
+  },
+  forms: [{ name: "bulbasaur", url: "https://example.com/forms/1" }],
+  game_indices: [
+    {
+      game_index: 1,
+      version: { name: "red", url: "https://example.com/version/red" },
+    },
+  ],
+  height: 7,
+  held_items: [],
+  id: 1,
+  is_default: true,
+  location_area_encounters: "https://example.com/pokemon/1/encounters",
+  moves: [],
+  name: "bulbasaur",
+  order: 1,
+  past_abilities: [],
+  past_stats: [],
+  past_types: [],
+  species: { name: "bulbasaur", url: "https://example.com/species/1" },
+  sprites: {
+    back_default: "https://example.com/sprites/back.png",
+    back_female: null,
+    back_shiny: "https://example.com/sprites/back-shiny.png",
+    back_shiny_female: null,
+    front_default: "https://example.com/sprites/front.png",
+    front_female: null,
+    front_shiny: "https://example.com/sprites/front-shiny.png",
+    front_shiny_female: null,
+  },
+  stats: [
+    {
+      base_stat: 45,
+      effort: 0,
+      stat: { name: "hp", url: "https://example.com/stat/hp" },
+    },
+  ],
+  types: [
+    { slot: 1, type: { name: "grass", url: "https://example.com/grass" } },
+  ],
+  weight: 69,
+};
+
 jest.mock("../services/pokemonService", () => ({
-  getPokemonList: jest.fn().mockResolvedValue({
-    count: "1350",
-    next: "https://pokeapi.co/api/v2/pokemon/?offset=20&limit=20",
-    previous: null,
-    results: [
-      {
-        name: "bulbasaur",
-        url: "https://pokeapi.co/api/v2/pokemon/1/",
-      },
-    ],
-  }),
+  getPokemonList: jest.fn().mockResolvedValue(pokemonListResponseMock),
+  getPokemonById: jest.fn().mockResolvedValue(pokemonResponseMock),
 }));
 
 describe("API integration", () => {
@@ -91,6 +137,28 @@ describe("API integration", () => {
 
       expect(Array.isArray(body.results)).toBe(true);
       expect(body.results.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("expone GET /pokemons/:id", async () => {
+    await withServer(async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/pokemons/1`);
+
+      expect(response.status).not.toBe(404);
+    });
+  });
+
+  it("devuelve el pokemon con el id indicado en /pokemons/:id", async () => {
+    await withServer(async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/pokemons/1`);
+
+      expect(response.ok).toBe(true);
+      const body = (await response.json()) as interfaces.Pokemon;
+
+      expect(body.id).toBe(1);
+      expect(body.name).toBe("bulbasaur");
+      expect(Array.isArray(body.types)).toBe(true);
+      expect(body.cries.latest).toBe("https://example.com/cries/latest.ogg");
     });
   });
 });

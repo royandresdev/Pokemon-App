@@ -3,9 +3,10 @@ const express = require("express");
 const { loginController } = require("../controllers/loginController") as {
   loginController: (request: unknown, response: unknown) => unknown;
 };
-const { listPokemonsController } =
+const { listPokemonsController, getPokemonByIdController } =
   require("../controllers/pokemonController") as {
     listPokemonsController: (request: unknown, response: unknown) => unknown;
+    getPokemonByIdController: (request: unknown, response: unknown) => unknown;
   };
 
 function createApiRouter() {
@@ -13,6 +14,7 @@ function createApiRouter() {
 
   router.post("/login", loginController);
   router.get("/pokemons", listPokemonsController);
+  router.get("/pokemons/:id", getPokemonByIdController);
 
   return router;
 }
