@@ -144,6 +144,20 @@ describe("API integration", () => {
     });
   });
 
+  it("acepta limit y offset en /pokemons y los pasa al servicio", async () => {
+    const { getPokemonList } = require("../services/pokemonService") as {
+      getPokemonList: jest.Mock;
+    };
+
+    await withServer(async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/pokemons?limit=40&offset=80`);
+
+      expect(response.ok).toBe(true);
+    });
+
+    expect(getPokemonList).toHaveBeenCalledWith(40, 80);
+  });
+
   it("expone GET /pokemons/:id", async () => {
     await withServer(async (baseUrl) => {
       const response = await fetch(`${baseUrl}/pokemons/1`);

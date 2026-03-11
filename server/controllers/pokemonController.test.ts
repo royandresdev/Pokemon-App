@@ -77,7 +77,7 @@ describe("pokemonController", () => {
   it("responde con la lista de pokemons resuelta por el servicio", async () => {
     const { listPokemonsController } = require("./pokemonController") as {
       listPokemonsController: (
-        request: unknown,
+        request: { query?: { limit?: string; offset?: string } },
         response: {
           status: (statusCode: number) => {
             json: (payload: unknown) => unknown;
@@ -93,6 +93,34 @@ describe("pokemonController", () => {
 
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith(pokemonListResponse);
+  });
+
+  it("listPokemonsController pasa limit y offset al servicio", async () => {
+    const { listPokemonsController } = require("./pokemonController") as {
+      listPokemonsController: (
+        request: { query?: { limit?: string; offset?: string } },
+        response: {
+          status: (statusCode: number) => {
+            json: (payload: unknown) => unknown;
+          };
+        },
+      ) => Promise<unknown>;
+    };
+
+    const { getPokemonList } = require("../services/pokemonService") as {
+      getPokemonList: jest.Mock;
+    };
+
+    const json = jest.fn();
+    const status = jest.fn(() => ({ json }));
+
+    await listPokemonsController(
+      { query: { limit: "40", offset: "80" } },
+      { status },
+    );
+
+    expect(getPokemonList).toHaveBeenCalledWith(40, 80);
+    expect(status).toHaveBeenCalledWith(200);
   });
 
   it("getPokemonByIdController responde con el pokemon del servicio", async () => {
