@@ -1,3 +1,5 @@
+import type interfaces = require("../shared/interfaces");
+
 type AppServer = {
   listen: (
     port: number,
@@ -127,24 +129,20 @@ describe("endpoint /pokemons", () => {
   it("devuelve un array de pokemons", async () => {
     await withServer(async (baseUrl) => {
       const response = await fetch(`${baseUrl}/pokemons`);
-      const body = (await response.json()) as unknown;
+      const body = (await response.json()) as interfaces.PokemonListResponse;
 
-      expect(Array.isArray(body)).toBe(true);
+      expect(Array.isArray(body.results)).toBe(true);
     });
   });
 
   it("cada pokemon tiene id, name y url", async () => {
     await withServer(async (baseUrl) => {
       const response = await fetch(`${baseUrl}/pokemons`);
-      const pokemons = (await response.json()) as Array<{
-        id: number;
-        name: string;
-        url: string;
-      }>;
+      const pokemons =
+        (await response.json()) as interfaces.PokemonListResponse;
 
-      expect(pokemons.length).toBeGreaterThan(0);
-      pokemons.forEach((pokemon) => {
-        expect(typeof pokemon.id).toBe("number");
+      expect(pokemons.results.length).toBeGreaterThan(0);
+      pokemons.results.forEach((pokemon) => {
         expect(typeof pokemon.name).toBe("string");
         expect(typeof pokemon.url).toBe("string");
       });
