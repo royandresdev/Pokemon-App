@@ -14,9 +14,11 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "cors": "^2.8.6",
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.4.0",
     "jest": "^30.3.0",

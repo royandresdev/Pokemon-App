@@ -1,9 +1,8 @@
+import { RouterProvider } from "react-router-dom";
+import { appRouter } from "./router";
+
 function App() {
-  return (
-    <div>
-      <h1>Pokemon App</h1>
-    </div>
-  )
+  return <RouterProvider router={appRouter} />;
 }
 
-export default App
+export default App;
