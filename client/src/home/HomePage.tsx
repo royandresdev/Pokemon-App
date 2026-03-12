@@ -12,13 +12,7 @@ const HomePage = () => {
   const fetchPokemonPage = useCallback(async (url: string, append: boolean) => {
     setIsLoading(true);
 
-    // Añadir sortBy a la URL si no está presente
-    const urlObj = new URL(url);
-    if (!urlObj.searchParams.has("sortBy")) {
-      urlObj.searchParams.set("sortBy", sortBy);
-    }
-
-    const response = await fetch(urlObj.toString());
+    const response = await fetch(url);
     const payload = await response.json() as PokemonListResponse;
 
     setPokemons((currentPokemons) => (
@@ -26,11 +20,11 @@ const HomePage = () => {
     ));
     setNextPageUrl(payload.next);
     setIsLoading(false);
-  }, [sortBy]);
+  }, []);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
-      void fetchPokemonPage(`${import.meta.env.VITE_API_URL}/pokemons?sortBy=${sortBy}`, false);
+      void fetchPokemonPage(`${import.meta.env.VITE_API_URL}/pokemons${sortBy === "number" ? "" : `?sortBy=${sortBy}`}`, false);
     }, 0);
 
     return () => {
