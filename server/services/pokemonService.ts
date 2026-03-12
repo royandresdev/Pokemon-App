@@ -10,7 +10,7 @@ const { getEnvConfig } = require("../config/env") as {
   };
 };
 
-let pokemonCatalogCache: interfaces.PokemonListResponse | null = null;
+let pokemonCatalogInCache: interfaces.PokemonListItem[] | null = null;
 
 function getPokemonIdFromUrl(url: string): string {
   const segments = url.split("/").filter(Boolean);
@@ -45,21 +45,23 @@ async function getPokemonList(
 ): Promise<interfaces.PokemonListResponse> {
   const { apiPublicBaseUrl } = getEnvConfig();
 
-  if (!pokemonCatalogCache) {
-    pokemonCatalogCache = await getPokemonCatalog();
+  if (!pokemonCatalogInCache) {
+    pokemonCatalogInCache = await getPokemonCatalog();
   }
 
+  const baseUrl = `${apiPublicBaseUrl}/pokemons`;
+
   return paginatePokemonCatalog(
-    pokemonCatalogCache,
+    pokemonCatalogInCache,
     limit,
     offset,
-    apiPublicBaseUrl,
+    baseUrl,
     sortBy,
   );
 }
 
-async function getPokemonCatalog(): Promise<interfaces.PokemonListResponse> {
-  const { pokeApiUrl, pokeApiSpriteUrl, apiPublicBaseUrl } = getEnvConfig();
+async function getPokemonCatalog(): Promise<interfaces.PokemonListItem[]> {
+  const { pokeApiUrl, pokeApiSpriteUrl } = getEnvConfig();
   const response = await fetch(`${pokeApiUrl}?limit=2000&offset=0`);
 
   if (!response.ok) {
@@ -73,30 +75,23 @@ async function getPokemonCatalog(): Promise<interfaces.PokemonListResponse> {
     sprite: `${pokeApiSpriteUrl}/${getPokemonIdFromUrl(pokemon.url)}.png`,
   }));
 
-  return {
-    ...payload,
-    next: mapNextToLocalApi(payload.next, apiPublicBaseUrl),
-    results,
-  };
+  return results;
 }
 
 function paginatePokemonCatalog(
-  catalog: interfaces.PokemonListResponse,
+  catalog: interfaces.PokemonListItem[],
   limit: number,
   offset: number,
-  apiPublicBaseUrl: string,
+  baseUrl: string,
   sortBy: SortBy = "number",
 ): interfaces.PokemonListResponse {
-  const totalCountFromCatalog = Number(catalog.count);
-  const totalCount = Number.isFinite(totalCountFromCatalog)
-    ? totalCountFromCatalog
-    : catalog.results.length;
+  const count = catalog.length;
 
-  const safeLimit = limit > 0 ? Math.floor(limit) : catalog.results.length;
+  const safeLimit = limit > 0 ? Math.floor(limit) : count;
   const safeOffset = offset >= 0 ? Math.floor(offset) : 0;
 
   // Copia de los resultados para no modificar el catálogo original
-  let sortedResults = [...catalog.results];
+  let sortedResults = [...catalog];
 
   if (sortBy === "alphabetical") {
     sortedResults.sort((a, b) => a.name.localeCompare(b.name));
@@ -111,24 +106,54 @@ function paginatePokemonCatalog(
   const results = sortedResults.slice(safeOffset, safeOffset + safeLimit);
 
   const next =
-    safeOffset + safeLimit < totalCount
-      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${safeOffset + safeLimit}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
+    safeOffset + safeLimit < count
+      ? `${baseUrl}?limit=${safeLimit}&offset=${safeOffset + safeLimit}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
       : null;
 
   const previous =
     safeOffset > 0
-      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
+      ? `${baseUrl}?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
       : null;
 
   return {
-    count: catalog.count,
+    count: count,
     next,
     previous,
     results,
   };
 }
 
-async function searchPokemons(name: string) {}
+async function searchPokemons(
+  name: string,
+  limit: number = 20,
+  offset: number = 0,
+  sortBy: SortBy = "number",
+): Promise<interfaces.PokemonListResponse> {
+  if (!pokemonCatalogInCache) {
+    pokemonCatalogInCache = await getPokemonCatalog();
+  }
+
+  const filteredResults = pokemonCatalogInCache.filter((pokemon) =>
+    pokemon.name.toLowerCase().includes(name.toLowerCase()),
+  );
+
+  const { apiPublicBaseUrl } = getEnvConfig();
+  const baseUrl = `${apiPublicBaseUrl}/pokemons/search?name=${encodeURIComponent(name)}`;
+  const paginatedResults = paginatePokemonCatalog(
+    filteredResults,
+    limit,
+    offset,
+    baseUrl,
+    sortBy,
+  );
+
+  return {
+    count: filteredResults.length,
+    next: paginatedResults.next,
+    previous: paginatedResults.previous,
+    results: paginatedResults.results,
+  };
+}
 
 async function getPokemonById(id: string): Promise<interfaces.Pokemon> {
   const { pokeApiUrl } = getEnvConfig();

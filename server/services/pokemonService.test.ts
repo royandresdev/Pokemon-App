@@ -78,7 +78,7 @@ describe("pokemonService", () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        count: "1350",
+        count: "1",
         next: "https://pokeapi.co/api/v2/pokemon?offset=20&limit=20",
         previous: null,
         results: [
@@ -106,8 +106,8 @@ describe("pokemonService", () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        count: "1350",
-        next: "http://localhost:3000/pokemons?limit=20&offset=20",
+        count: 1,
+        next: null,
         previous: null,
         results: expect.any(Array),
       }),
@@ -130,7 +130,7 @@ describe("pokemonService", () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        count: "1350",
+        count: 2,
         next: null,
         previous: null,
         results: [
@@ -181,7 +181,7 @@ describe("pokemonService", () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        count: "3",
+        count: 3,
         next: null,
         previous: null,
         results: [
@@ -358,7 +358,7 @@ describe("pokemonService", () => {
     });
 
     const { getPokemonCatalog } = require("./pokemonService") as {
-      getPokemonCatalog: () => Promise<interfaces.PokemonListResponse>;
+      getPokemonCatalog: () => Promise<interfaces.PokemonListItem[]>;
     };
 
     const result = await getPokemonCatalog();
@@ -366,11 +366,8 @@ describe("pokemonService", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "https://example.com/pokemon?limit=2000&offset=0",
     );
-    expect(result.results).toHaveLength(2);
-    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.png");
-    expect(result.next).toBe(
-      "http://localhost:3000/pokemons?limit=2000&offset=2000",
-    );
+    expect(result).toHaveLength(2);
+    expect(result[0]!.sprite).toBe("https://example.com/sprites/1.png");
   });
 
   it("getPokemonCatalog lanza error si PokeAPI falla", async () => {
@@ -397,42 +394,37 @@ describe("pokemonService", () => {
   it("paginatePokemonCatalog devuelve slice con next y previous calculados", () => {
     const { paginatePokemonCatalog } = require("./pokemonService") as {
       paginatePokemonCatalog: (
-        catalog: interfaces.PokemonListResponse,
+        catalog: interfaces.PokemonListItem[],
         limit: number,
         offset: number,
-        apiPublicBaseUrl: string,
-        sortBy?: "number" | "alphabetical",
+        baseUrl: string,
+        sortBy: interfaces.SortBy,
       ) => interfaces.PokemonListResponse;
     };
 
-    const catalog: interfaces.PokemonListResponse = {
-      count: "3",
-      next: null,
-      previous: null,
-      results: [
-        {
-          name: "bulbasaur",
-          url: "https://pokeapi.co/api/v2/pokemon/1/",
-          sprite: "https://example.com/sprites/1.png",
-        },
-        {
-          name: "ivysaur",
-          url: "https://pokeapi.co/api/v2/pokemon/2/",
-          sprite: "https://example.com/sprites/2.png",
-        },
-        {
-          name: "venusaur",
-          url: "https://pokeapi.co/api/v2/pokemon/3/",
-          sprite: "https://example.com/sprites/3.png",
-        },
-      ],
-    };
+    const catalog: interfaces.PokemonListItem[] = [
+      {
+        name: "bulbasaur",
+        url: "https://pokeapi.co/api/v2/pokemon/1/",
+        sprite: "https://example.com/sprites/1.png",
+      },
+      {
+        name: "ivysaur",
+        url: "https://pokeapi.co/api/v2/pokemon/2/",
+        sprite: "https://example.com/sprites/2.png",
+      },
+      {
+        name: "venusaur",
+        url: "https://pokeapi.co/api/v2/pokemon/3/",
+        sprite: "https://example.com/sprites/3.png",
+      },
+    ];
 
     const result = paginatePokemonCatalog(
       catalog,
       2,
       1,
-      "http://localhost:3000",
+      "http://localhost:3000/pokemons",
       "number",
     );
 
@@ -449,7 +441,7 @@ describe("pokemonService", () => {
   it("paginatePokemonCatalog incluye sortBy alphabetical en next y previous", () => {
     const { paginatePokemonCatalog } = require("./pokemonService") as {
       paginatePokemonCatalog: (
-        catalog: interfaces.PokemonListResponse,
+        catalog: interfaces.PokemonListItem[],
         limit: number,
         offset: number,
         apiPublicBaseUrl: string,
@@ -457,44 +449,39 @@ describe("pokemonService", () => {
       ) => interfaces.PokemonListResponse;
     };
 
-    const catalog: interfaces.PokemonListResponse = {
-      count: "5",
-      next: null,
-      previous: null,
-      results: [
-        {
-          name: "bulbasaur",
-          url: "https://pokeapi.co/api/v2/pokemon/1/",
-          sprite: "https://example.com/sprites/1.png",
-        },
-        {
-          name: "ivysaur",
-          url: "https://pokeapi.co/api/v2/pokemon/2/",
-          sprite: "https://example.com/sprites/2.png",
-        },
-        {
-          name: "venusaur",
-          url: "https://pokeapi.co/api/v2/pokemon/3/",
-          sprite: "https://example.com/sprites/3.png",
-        },
-        {
-          name: "charmander",
-          url: "https://pokeapi.co/api/v2/pokemon/4/",
-          sprite: "https://example.com/sprites/4.png",
-        },
-        {
-          name: "charmeleon",
-          url: "https://pokeapi.co/api/v2/pokemon/5/",
-          sprite: "https://example.com/sprites/5.png",
-        },
-      ],
-    };
+    const catalog: interfaces.PokemonListItem[] = [
+      {
+        name: "bulbasaur",
+        url: "https://pokeapi.co/api/v2/pokemon/1/",
+        sprite: "https://example.com/sprites/1.png",
+      },
+      {
+        name: "ivysaur",
+        url: "https://pokeapi.co/api/v2/pokemon/2/",
+        sprite: "https://example.com/sprites/2.png",
+      },
+      {
+        name: "venusaur",
+        url: "https://pokeapi.co/api/v2/pokemon/3/",
+        sprite: "https://example.com/sprites/3.png",
+      },
+      {
+        name: "charmander",
+        url: "https://pokeapi.co/api/v2/pokemon/4/",
+        sprite: "https://example.com/sprites/4.png",
+      },
+      {
+        name: "charmeleon",
+        url: "https://pokeapi.co/api/v2/pokemon/5/",
+        sprite: "https://example.com/sprites/5.png",
+      },
+    ];
 
     const result = paginatePokemonCatalog(
       catalog,
       2,
       2,
-      "http://localhost:3000",
+      "http://localhost:3000/pokemons",
       "alphabetical",
     );
 
@@ -509,7 +496,7 @@ describe("pokemonService", () => {
   it("paginatePokemonCatalog devuelve valores por defecto para paginacion invalida", () => {
     const { paginatePokemonCatalog } = require("./pokemonService") as {
       paginatePokemonCatalog: (
-        catalog: interfaces.PokemonListResponse,
+        catalog: interfaces.PokemonListItem[],
         limit: number,
         offset: number,
         apiPublicBaseUrl: string,
@@ -517,33 +504,28 @@ describe("pokemonService", () => {
       ) => interfaces.PokemonListResponse;
     };
 
-    const catalog: interfaces.PokemonListResponse = {
-      count: "4",
-      next: null,
-      previous: null,
-      results: [
-        {
-          name: "bulbasaur",
-          url: "https://pokeapi.co/api/v2/pokemon/1/",
-          sprite: "https://example.com/sprites/1.png",
-        },
-        {
-          name: "ivysaur",
-          url: "https://pokeapi.co/api/v2/pokemon/2/",
-          sprite: "https://example.com/sprites/2.png",
-        },
-        {
-          name: "venusaur",
-          url: "https://pokeapi.co/api/v2/pokemon/3/",
-          sprite: "https://example.com/sprites/3.png",
-        },
-        {
-          name: "charmander",
-          url: "https://pokeapi.co/api/v2/pokemon/4/",
-          sprite: "https://example.com/sprites/4.png",
-        },
-      ],
-    };
+    const catalog: interfaces.PokemonListItem[] = [
+      {
+        name: "bulbasaur",
+        url: "https://pokeapi.co/api/v2/pokemon/1/",
+        sprite: "https://example.com/sprites/1.png",
+      },
+      {
+        name: "ivysaur",
+        url: "https://pokeapi.co/api/v2/pokemon/2/",
+        sprite: "https://example.com/sprites/2.png",
+      },
+      {
+        name: "venusaur",
+        url: "https://pokeapi.co/api/v2/pokemon/3/",
+        sprite: "https://example.com/sprites/3.png",
+      },
+      {
+        name: "charmander",
+        url: "https://pokeapi.co/api/v2/pokemon/4/",
+        sprite: "https://example.com/sprites/4.png",
+      },
+    ];
 
     const result = paginatePokemonCatalog(
       catalog,
