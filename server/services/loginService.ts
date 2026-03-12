@@ -42,6 +42,4 @@ function getLoginResult(body: unknown): LoginResult {
   };
 }
 
-module.exports = {
-  getLoginResult,
-};
+export { getLoginResult };

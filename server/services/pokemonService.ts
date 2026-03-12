@@ -1,4 +1,8 @@
-import type sharedInterfaces = require("../../shared/interfaces");
+import type {
+  Pokemon,
+  PokemonListItem,
+  PokemonListResponse,
+} from "../../shared/interfaces/index.js";
 import type { QueryParams } from "../../shared/interfaces/index.js";
 
 const { getEnvConfig } = require("../config/env") as {
@@ -10,7 +14,7 @@ const { getEnvConfig } = require("../config/env") as {
   };
 };
 
-let pokemonCatalogInCache: sharedInterfaces.PokemonListItem[] | null = null;
+let pokemonCatalogInCache: PokemonListItem[] | null = null;
 
 function getPokemonIdFromUrl(url: string): string {
   const segments = url.split("/").filter(Boolean);
@@ -40,7 +44,7 @@ function mapNextToLocalApi(
 
 async function getPokemonList(
   queryParams: QueryParams,
-): Promise<sharedInterfaces.PokemonListResponse> {
+): Promise<PokemonListResponse> {
   const { apiPublicBaseUrl } = getEnvConfig();
 
   if (!pokemonCatalogInCache) {
@@ -52,9 +56,7 @@ async function getPokemonList(
   return paginatePokemonCatalog(pokemonCatalogInCache, baseUrl, queryParams);
 }
 
-async function getPokemonCatalog(): Promise<
-  sharedInterfaces.PokemonListItem[]
-> {
+async function getPokemonCatalog(): Promise<PokemonListItem[]> {
   const { pokeApiUrl, pokeApiSpriteUrl } = getEnvConfig();
   const response = await fetch(`${pokeApiUrl}?limit=2000&offset=0`);
 
@@ -62,8 +64,7 @@ async function getPokemonCatalog(): Promise<
     throw new Error("Error al obtener el catalogo de pokemons");
   }
 
-  const payload =
-    (await response.json()) as sharedInterfaces.PokemonListResponse;
+  const payload = (await response.json()) as PokemonListResponse;
 
   const results = payload.results.map((pokemon) => ({
     ...pokemon,
@@ -74,10 +75,10 @@ async function getPokemonCatalog(): Promise<
 }
 
 function paginatePokemonCatalog(
-  catalog: sharedInterfaces.PokemonListItem[],
+  catalog: PokemonListItem[],
   baseUrl: string,
   queryParams: QueryParams,
-): sharedInterfaces.PokemonListResponse {
+): PokemonListResponse {
   const count = catalog.length;
 
   const { limit = "20", offset = "0", sortby = "number" } = queryParams;
@@ -120,7 +121,7 @@ function paginatePokemonCatalog(
 
 async function searchPokemons(
   queryParams: QueryParams,
-): Promise<sharedInterfaces.PokemonListResponse> {
+): Promise<PokemonListResponse> {
   const { name = "" } = queryParams;
 
   if (!pokemonCatalogInCache) {
@@ -147,7 +148,7 @@ async function searchPokemons(
   };
 }
 
-async function getPokemonById(id: string): Promise<sharedInterfaces.Pokemon> {
+async function getPokemonById(id: string): Promise<Pokemon> {
   const { pokeApiUrl } = getEnvConfig();
   const response = await fetch(`${pokeApiUrl}/${id}`);
 
@@ -155,15 +156,9 @@ async function getPokemonById(id: string): Promise<sharedInterfaces.Pokemon> {
     throw new Error("Error al obtener el pokemon");
   }
 
-  const payload = (await response.json()) as sharedInterfaces.Pokemon;
+  const payload = (await response.json()) as Pokemon;
 
   return payload;
 }
 
-module.exports = {
-  getPokemonList,
-  getPokemonCatalog,
-  paginatePokemonCatalog,
-  getPokemonById,
-  searchPokemons,
-};
+export { getPokemonList, getPokemonById, searchPokemons };

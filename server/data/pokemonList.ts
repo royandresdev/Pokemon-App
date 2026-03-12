@@ -1,6 +1,6 @@
-import type interfaces = require("../../shared/interfaces");
+import type { PokemonListResponse } from "../../shared/interfaces/index.js";
 
-const POKEMONS: interfaces.PokemonListResponse = {
+const POKEMONS: PokemonListResponse = {
   count: "1350",
   next: null,
   previous: null,
@@ -8,18 +8,19 @@ const POKEMONS: interfaces.PokemonListResponse = {
     {
       name: "bulbasaur",
       url: "https://pokeapi.co/api/v2/pokemon/1/",
+      sprite: "https://example.com/sprites/front.png",
     },
     {
       name: "ivysaur",
       url: "https://pokeapi.co/api/v2/pokemon/2/",
+      sprite: "https://example.com/sprites/front.png",
     },
     {
       name: "venusaur",
       url: "https://pokeapi.co/api/v2/pokemon/3/",
+      sprite: "https://example.com/sprites/front.png",
     },
   ],
 };
 
-module.exports = {
-  POKEMONS,
-};
+export { POKEMONS };

@@ -1,4 +1,5 @@
 import type interfaces = require("../../shared/interfaces");
+import { vi, describe, it, expect, beforeEach } from "vitest";
 
 const pokemonListResponse: interfaces.PokemonListResponse = {
   count: "1350",
@@ -68,143 +69,67 @@ const pokemonResponse: interfaces.Pokemon = {
   weight: 69,
 };
 
-jest.mock("../services/pokemonService", () => ({
-  getPokemonList: jest.fn().mockResolvedValue(pokemonListResponse),
-  getPokemonById: jest.fn().mockResolvedValue(pokemonResponse),
-  searchPokemons: jest.fn(),
+vi.mock("../services/pokemonService", () => ({
+  getPokemonList: vi.fn().mockResolvedValue(pokemonListResponse),
+  getPokemonById: vi.fn().mockResolvedValue(pokemonResponse),
+  searchPokemons: vi.fn(),
 }));
 
 describe("pokemonController", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   it("listPokemonsController pasa sortBy al servicio", async () => {
-    const { listPokemonsController } = require("./pokemonController") as {
-      listPokemonsController: (
-        request: {
-          query?: { limit?: string; offset?: string; sortby?: string };
-        },
-        response: {
-          status: (statusCode: number) => {
-            json: (payload: unknown) => unknown;
-          };
-        },
-      ) => Promise<unknown>;
-    };
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
 
-    const { getPokemonList } = require("../services/pokemonService") as {
-      getPokemonList: jest.Mock;
-    };
+    const { listPokemonsController } = await import("./pokemonController.js");
 
-    const json = jest.fn();
-    const status = jest.fn(() => ({ json }));
-
-    await listPokemonsController(
-      { query: { limit: "10", offset: "5", sortby: "alphabetical" } },
-      { status },
-    );
+    const { getPokemonList } = await import("../services/pokemonService.js");
 
     expect(getPokemonList).toHaveBeenCalledWith(10, 5, "alphabetical");
     expect(status).toHaveBeenCalledWith(200);
   });
   it("responde con la lista de pokemons resuelta por el servicio", async () => {
-    const { listPokemonsController } = require("./pokemonController") as {
-      listPokemonsController: (
-        request: { query?: { limit?: string; offset?: string } },
-        response: {
-          status: (statusCode: number) => {
-            json: (payload: unknown) => unknown;
-          };
-        },
-      ) => Promise<unknown>;
-    };
-
-    const json = jest.fn();
-    const status = jest.fn(() => ({ json }));
-
+    const { listPokemonsController } = await import("./pokemonController.js");
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
     await listPokemonsController({}, { status });
-
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith(pokemonListResponse);
   });
 
   it("listPokemonsController pasa limit y offset al servicio", async () => {
-    const { listPokemonsController } = require("./pokemonController") as {
-      listPokemonsController: (
-        request: { query?: { limit?: string; offset?: string } },
-        response: {
-          status: (statusCode: number) => {
-            json: (payload: unknown) => unknown;
-          };
-        },
-      ) => Promise<unknown>;
-    };
-
-    const { getPokemonList } = require("../services/pokemonService") as {
-      getPokemonList: jest.Mock;
-    };
-
-    const json = jest.fn();
-    const status = jest.fn(() => ({ json }));
-
+    const { listPokemonsController } = await import("./pokemonController");
+    const { getPokemonList } = await import("../services/pokemonService");
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
     await listPokemonsController(
       { query: { limit: "40", offset: "80" } },
       { status },
     );
-
     expect(getPokemonList).toHaveBeenCalledWith(40, 80, "number");
     expect(status).toHaveBeenCalledWith(200);
   });
 
   it("getPokemonByIdController responde con el pokemon del servicio", async () => {
-    const { getPokemonByIdController } = require("./pokemonController") as {
-      getPokemonByIdController: (
-        request: { params: { id: string } },
-        response: {
-          status: (statusCode: number) => {
-            json: (payload: unknown) => unknown;
-          };
-        },
-      ) => Promise<unknown>;
-    };
-
-    const json = jest.fn();
-    const status = jest.fn(() => ({ json }));
-
+    const { getPokemonByIdController } = await import("./pokemonController");
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
     await getPokemonByIdController({ params: { id: "1" } }, { status });
-
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith(pokemonResponse);
   });
   describe("searchPokemonsController", () => {
     it("pasa limit, offset y sortby al servicio", async () => {
-      const { searchPokemons } = require("../services/pokemonService") as {
-        searchPokemons: jest.Mock;
-      };
+      const { searchPokemons } = await import("../services/pokemonService");
       searchPokemons.mockResolvedValueOnce({
         count: 1,
         results: [{ name: "bulbasaur" }],
       });
-
-      const { searchPokemonsController } = require("./pokemonController") as {
-        searchPokemonsController: (
-          request: {
-            query?: {
-              name?: string;
-              limit?: string;
-              offset?: string;
-              sortby?: string;
-            };
-          },
-          response: {
-            status: (code: number) => { json: (payload: unknown) => unknown };
-          },
-        ) => Promise<unknown>;
-      };
-
-      const json = jest.fn();
-      const status = jest.fn(() => ({ json }));
-
+      const { searchPokemonsController } = await import("./pokemonController");
+      const json = vi.fn();
+      const status = vi.fn(() => ({ json }));
       await searchPokemonsController(
         {
           query: {
@@ -230,26 +155,14 @@ describe("pokemonController", () => {
     });
 
     it("usa valores por defecto si limit, offset o sortby no están en query", async () => {
-      const { searchPokemons } = require("../services/pokemonService") as {
-        searchPokemons: jest.Mock;
-      };
+      const { searchPokemons } = await import("../services/pokemonService");
       searchPokemons.mockResolvedValueOnce({
         count: 1,
         results: [{ name: "bulbasaur" }],
       });
-
-      const { searchPokemonsController } = require("./pokemonController") as {
-        searchPokemonsController: (
-          request: { query?: { name?: string } },
-          response: {
-            status: (code: number) => { json: (payload: unknown) => unknown };
-          },
-        ) => Promise<unknown>;
-      };
-
-      const json = jest.fn();
-      const status = jest.fn(() => ({ json }));
-
+      const { searchPokemonsController } = await import("./pokemonController");
+      const json = vi.fn();
+      const status = vi.fn(() => ({ json }));
       await searchPokemonsController({ query: { name: "bulba" } }, { status });
       expect(searchPokemons).toHaveBeenCalledWith("bulba", 20, 0, "number");
       expect(status).toHaveBeenCalledWith(200);
@@ -260,25 +173,12 @@ describe("pokemonController", () => {
     });
     it("responde con status 200 y el resultado del servicio", async () => {
       const mockResult = { count: 1, results: [{ name: "bulbasaur" }] };
-      const { searchPokemons } = require("../services/pokemonService") as {
-        searchPokemons: jest.Mock;
-      };
+      const { searchPokemons } = await import("../services/pokemonService");
       searchPokemons.mockResolvedValueOnce(mockResult);
-
-      const { searchPokemonsController } = require("./pokemonController") as {
-        searchPokemonsController: (
-          request: { query?: { name?: string } },
-          response: {
-            status: (code: number) => { json: (payload: unknown) => unknown };
-          },
-        ) => Promise<unknown>;
-      };
-
-      const json = jest.fn();
-      const status = jest.fn(() => ({ json }));
-
-      const defaultArguments = [20, 0, "number"]; //valores por defecto de limit, offset y sortBy en el servicio si no se pasan desde el controlador
-
+      const { searchPokemonsController } = await import("./pokemonController");
+      const json = vi.fn();
+      const status = vi.fn(() => ({ json }));
+      const defaultArguments = [20, 0, "number"];
       await searchPokemonsController({ query: { name: "bulba" } }, { status });
       expect(status).toHaveBeenCalledWith(200);
       expect(json).toHaveBeenCalledWith(mockResult);
@@ -286,27 +186,13 @@ describe("pokemonController", () => {
     });
 
     it("llama al servicio con string vacío si no hay query.name", async () => {
-      const { searchPokemons } = require("../services/pokemonService") as {
-        searchPokemons: jest.Mock;
-      };
+      const { searchPokemons } = await import("../services/pokemonService");
       searchPokemons.mockResolvedValueOnce({ count: 0, results: [] });
-
-      const { searchPokemonsController } = require("./pokemonController") as {
-        searchPokemonsController: (
-          request: { query?: { name?: string } },
-          response: {
-            status: (code: number) => { json: (payload: unknown) => unknown };
-          },
-        ) => Promise<unknown>;
-      };
-
-      const json = jest.fn();
-      const status = jest.fn(() => ({ json }));
-
-      const defaultArguments = ["", 20, 0, "number"]; //valores por defecto de name, limit, offset y sortBy en el servicio si no se pasan desde el controlador
-
+      const { searchPokemonsController } = await import("./pokemonController");
+      const json = vi.fn();
+      const status = vi.fn(() => ({ json }));
+      const defaultArguments = ["", 20, 0, "number"];
       await searchPokemonsController({ query: {} }, { status });
-
       expect(searchPokemons).toHaveBeenCalledWith(...defaultArguments);
       expect(status).toHaveBeenCalledWith(200);
       expect(json).toHaveBeenCalledWith({ count: 0, results: [] });

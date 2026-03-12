@@ -30,6 +30,4 @@ async function withServer(
   }
 }
 
-module.exports = {
-  withServer,
-};
+export { withServer };

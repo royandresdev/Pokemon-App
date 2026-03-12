@@ -1,4 +1,4 @@
-const express = require("express");
+import express from "express";
 
 const { loginController } = require("../controllers/loginController") as {
   loginController: (request: unknown, response: unknown) => unknown;
@@ -24,6 +24,4 @@ function createApiRouter() {
   return router;
 }
 
-module.exports = {
-  createApiRouter,
-};
+export { createApiRouter };

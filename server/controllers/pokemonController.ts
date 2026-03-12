@@ -1,5 +1,9 @@
-import type interfaces = require("../../shared/interfaces");
-import type { SortBy } from "../../shared/interfaces";
+import type { SortBy } from "../../shared/interfaces/index.js";
+import {
+  getPokemonList,
+  getPokemonById,
+  searchPokemons,
+} from "../services/pokemonService.js";
 
 type AppResponse = {
   status: (statusCode: number) => {
@@ -15,22 +19,6 @@ type ListPokemonsRequest = {
     sortby?: SortBy;
   };
 };
-
-const { getPokemonList, getPokemonById, searchPokemons } =
-  require("../services/pokemonService") as {
-    getPokemonList: (
-      limit?: number,
-      offset?: number,
-      sortBy?: SortBy,
-    ) => Promise<interfaces.PokemonListResponse>;
-    getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
-    searchPokemons: (
-      name: string,
-      limit?: number,
-      offset?: number,
-      sortBy?: SortBy,
-    ) => Promise<interfaces.PokemonListResponse>;
-  };
 
 function parsePaginationNumber(
   value: string | undefined,
@@ -49,15 +37,11 @@ function parsePaginationNumber(
   return Math.floor(parsedValue);
 }
 
-async function listPokemonsController(
+export async function listPokemonsController(
   request: ListPokemonsRequest,
   response: AppResponse,
 ) {
-  const limit = parsePaginationNumber(request.query?.limit, 20);
-  const offset = parsePaginationNumber(request.query?.offset, 0);
-  const sortBy: SortBy =
-    request.query?.sortby === "alphabetical" ? "alphabetical" : "number";
-  const pokemonList = await getPokemonList(limit, offset, sortBy);
+  const pokemonList = await getPokemonList(request.query || {});
 
   return response.status(200).json(pokemonList);
 }
@@ -76,13 +60,8 @@ async function searchPokemonsController(
   request: ListPokemonsRequest,
   response: AppResponse,
 ) {
-  const name = request.query?.name || "";
-  const limit = parsePaginationNumber(request.query?.limit, 20);
-  const offset = parsePaginationNumber(request.query?.offset, 0);
-  const sortBy: SortBy =
-    request.query?.sortby === "alphabetical" ? "alphabetical" : "number";
+  const result = await searchPokemons(request.query || {});
 
-  const result = await searchPokemons(name, limit, offset, sortBy);
   return response.status(200).json(result);
 }
 

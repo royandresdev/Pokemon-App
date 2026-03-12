@@ -1,9 +1,6 @@
-const express = require("express");
-const cors = require("cors");
-
-const { createApiRouter } = require("../routes/apiRouter") as {
-  createApiRouter: () => unknown;
-};
+import express from "express";
+import cors from "cors";
+import { createApiRouter } from "../routes/apiRouter.js";
 
 function createServer() {
   const app = express();
@@ -15,6 +12,4 @@ function createServer() {
   return app;
 }
 
-module.exports = {
-  createServer,
-};
+export { createServer };
