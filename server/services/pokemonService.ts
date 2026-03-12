@@ -9,6 +9,8 @@ const { getEnvConfig } = require("../config/env") as {
   };
 };
 
+let pokemonCatalogCache: interfaces.PokemonListResponse | null = null;
+
 function getPokemonIdFromUrl(url: string): string {
   const segments = url.split("/").filter(Boolean);
   const pokemonId = segments.at(-1);
@@ -60,6 +62,61 @@ async function getPokemonList(
   };
 }
 
+async function getPokemonCatalog(): Promise<interfaces.PokemonListResponse> {
+  const { pokeApiUrl, pokeApiSpriteUrl, apiPublicBaseUrl } = getEnvConfig();
+  const response = await fetch(`${pokeApiUrl}?limit=2000&offset=0`);
+
+  if (!response.ok) {
+    throw new Error("Error al obtener el catalogo de pokemons");
+  }
+
+  const payload = (await response.json()) as interfaces.PokemonListResponse;
+
+  const results = payload.results.map((pokemon) => ({
+    ...pokemon,
+    sprite: `${pokeApiSpriteUrl}/${getPokemonIdFromUrl(pokemon.url)}.png`,
+  }));
+
+  return {
+    ...payload,
+    next: mapNextToLocalApi(payload.next, apiPublicBaseUrl),
+    results,
+  };
+}
+
+function paginatePokemonCatalog(
+  catalog: interfaces.PokemonListResponse,
+  limit: number,
+  offset: number,
+  apiPublicBaseUrl: string,
+): interfaces.PokemonListResponse {
+  const totalCountFromCatalog = Number(catalog.count);
+  const totalCount = Number.isFinite(totalCountFromCatalog)
+    ? totalCountFromCatalog
+    : catalog.results.length;
+
+  const safeLimit = limit > 0 ? Math.floor(limit) : catalog.results.length;
+  const safeOffset = offset >= 0 ? Math.floor(offset) : 0;
+  const results = catalog.results.slice(safeOffset, safeOffset + safeLimit);
+
+  const next =
+    safeOffset + safeLimit < totalCount
+      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${safeOffset + safeLimit}`
+      : null;
+
+  const previous =
+    safeOffset > 0
+      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}`
+      : null;
+
+  return {
+    count: catalog.count,
+    next,
+    previous,
+    results,
+  };
+}
+
 async function getPokemonById(id: string): Promise<interfaces.Pokemon> {
   const { pokeApiUrl } = getEnvConfig();
   const response = await fetch(`${pokeApiUrl}/${id}`);
@@ -75,5 +132,7 @@ async function getPokemonById(id: string): Promise<interfaces.Pokemon> {
 
 module.exports = {
   getPokemonList,
+  getPokemonCatalog,
+  paginatePokemonCatalog,
   getPokemonById,
 };

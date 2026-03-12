@@ -166,6 +166,172 @@ describe("pokemonService", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("getPokemonCatalog devuelve el catalogo completo con sprite", async () => {
+    jest.doMock("../config/env", () => ({
+      getEnvConfig: () => ({
+        port: 3000,
+        pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
+      }),
+    }));
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        count: "1350",
+        next: "https://pokeapi.co/api/v2/pokemon?offset=2000&limit=2000",
+        previous: null,
+        results: [
+          {
+            name: "bulbasaur",
+            url: "https://pokeapi.co/api/v2/pokemon/1/",
+          },
+          {
+            name: "ivysaur",
+            url: "https://pokeapi.co/api/v2/pokemon/2/",
+          },
+        ],
+      }),
+    });
+
+    const { getPokemonCatalog } = require("./pokemonService") as {
+      getPokemonCatalog: () => Promise<interfaces.PokemonListResponse>;
+    };
+
+    const result = await getPokemonCatalog();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://example.com/pokemon?limit=2000&offset=0",
+    );
+    expect(result.results).toHaveLength(2);
+    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.png");
+    expect(result.next).toBe(
+      "http://localhost:3000/pokemons?limit=2000&offset=2000",
+    );
+  });
+
+  it("getPokemonCatalog lanza error si PokeAPI falla", async () => {
+    jest.doMock("../config/env", () => ({
+      getEnvConfig: () => ({
+        port: 3000,
+        pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
+      }),
+    }));
+
+    fetchMock.mockResolvedValueOnce({ ok: false });
+
+    const { getPokemonCatalog } = require("./pokemonService") as {
+      getPokemonCatalog: () => Promise<interfaces.PokemonListResponse>;
+    };
+
+    await expect(getPokemonCatalog()).rejects.toThrow(
+      "Error al obtener el catalogo de pokemons",
+    );
+  });
+
+  it("paginatePokemonCatalog devuelve slice con next y previous calculados", () => {
+    const { paginatePokemonCatalog } = require("./pokemonService") as {
+      paginatePokemonCatalog: (
+        catalog: interfaces.PokemonListResponse,
+        limit: number,
+        offset: number,
+        apiPublicBaseUrl: string,
+      ) => interfaces.PokemonListResponse;
+    };
+
+    const catalog: interfaces.PokemonListResponse = {
+      count: "3",
+      next: null,
+      previous: null,
+      results: [
+        {
+          name: "bulbasaur",
+          url: "https://pokeapi.co/api/v2/pokemon/1/",
+          sprite: "https://example.com/sprites/1.png",
+        },
+        {
+          name: "ivysaur",
+          url: "https://pokeapi.co/api/v2/pokemon/2/",
+          sprite: "https://example.com/sprites/2.png",
+        },
+        {
+          name: "venusaur",
+          url: "https://pokeapi.co/api/v2/pokemon/3/",
+          sprite: "https://example.com/sprites/3.png",
+        },
+      ],
+    };
+
+    const result = paginatePokemonCatalog(
+      catalog,
+      2,
+      1,
+      "http://localhost:3000",
+    );
+
+    expect(result.results.map((pokemon) => pokemon.name)).toEqual([
+      "ivysaur",
+      "venusaur",
+    ]);
+    expect(result.next).toBe(null);
+    expect(result.previous).toBe(
+      "http://localhost:3000/pokemons?limit=2&offset=0",
+    );
+  });
+
+  it("paginatePokemonCatalog devuelve valores por defecto para paginacion invalida", () => {
+    const { paginatePokemonCatalog } = require("./pokemonService") as {
+      paginatePokemonCatalog: (
+        catalog: interfaces.PokemonListResponse,
+        limit: number,
+        offset: number,
+        apiPublicBaseUrl: string,
+      ) => interfaces.PokemonListResponse;
+    };
+
+    const catalog: interfaces.PokemonListResponse = {
+      count: "4",
+      next: null,
+      previous: null,
+      results: [
+        {
+          name: "bulbasaur",
+          url: "https://pokeapi.co/api/v2/pokemon/1/",
+          sprite: "https://example.com/sprites/1.png",
+        },
+        {
+          name: "ivysaur",
+          url: "https://pokeapi.co/api/v2/pokemon/2/",
+          sprite: "https://example.com/sprites/2.png",
+        },
+        {
+          name: "venusaur",
+          url: "https://pokeapi.co/api/v2/pokemon/3/",
+          sprite: "https://example.com/sprites/3.png",
+        },
+        {
+          name: "charmander",
+          url: "https://pokeapi.co/api/v2/pokemon/4/",
+          sprite: "https://example.com/sprites/4.png",
+        },
+      ],
+    };
+
+    const result = paginatePokemonCatalog(
+      catalog,
+      -1,
+      -4,
+      "http://localhost:3000",
+    );
+
+    expect(result.results).toHaveLength(4);
+    expect(result.previous).toBe(null);
+    expect(result.next).toBe(null);
+  });
+
   it("lanza un error si PokeAPI responde con error", async () => {
     jest.doMock("../config/env", () => ({
       getEnvConfig: () => ({
