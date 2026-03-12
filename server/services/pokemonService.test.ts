@@ -612,4 +612,214 @@ describe("pokemonService", () => {
       "Error al obtener el pokemon",
     );
   });
+
+  describe("searchPokemons", () => {
+    beforeEach(() => {
+      fetchMock.mockReset();
+      jest.resetModules();
+    });
+
+    it("devuelve pokemons filtrados por nombre", async () => {
+      jest.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = require("./pokemonService") as {
+        searchPokemons: (
+          name: string,
+          limit?: number,
+          offset?: number,
+          sortBy?: "number" | "alphabetical",
+        ) => Promise<interfaces.PokemonListResponse>;
+      };
+
+      const result = await searchPokemons("saur");
+      expect(result.results.map((p) => p.name)).toEqual([
+        "bulbasaur",
+        "ivysaur",
+        "venusaur",
+      ]);
+      expect(result.count).toBe(3);
+    });
+
+    it("devuelve resultados vacíos si no hay coincidencias", async () => {
+      jest.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = require("./pokemonService") as {
+        searchPokemons: (
+          name: string,
+          limit?: number,
+          offset?: number,
+          sortBy?: "number" | "alphabetical",
+        ) => Promise<interfaces.PokemonListResponse>;
+      };
+
+      const result = await searchPokemons("pikachu");
+      expect(result.results).toEqual([]);
+      expect(result.count).toBe(0);
+    });
+
+    it("devuelve paginación correcta", async () => {
+      jest.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = require("./pokemonService") as {
+        searchPokemons: (
+          name: string,
+          limit?: number,
+          offset?: number,
+          sortBy?: "number" | "alphabetical",
+        ) => Promise<interfaces.PokemonListResponse>;
+      };
+
+      const result = await searchPokemons("saur", 2, 1);
+      expect(result.results.map((p) => p.name)).toEqual([
+        "ivysaur",
+        "venusaur",
+      ]);
+      expect(result.count).toBe(3);
+      expect(result.previous).toContain("offset=0");
+      expect(result.next).toBe(null);
+    });
+
+    it("ordena por nombre si se indica sortBy alphabetical", async () => {
+      jest.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = require("./pokemonService") as {
+        searchPokemons: (
+          name: string,
+          limit?: number,
+          offset?: number,
+          sortBy?: "number" | "alphabetical",
+        ) => Promise<interfaces.PokemonListResponse>;
+      };
+
+      const result = await searchPokemons("saur", 3, 0, "alphabetical");
+      expect(result.results.map((p) => p.name)).toEqual([
+        "bulbasaur",
+        "ivysaur",
+        "venusaur",
+      ]);
+    });
+
+    it("maneja límites y offsets inválidos", async () => {
+      jest.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = require("./pokemonService") as {
+        searchPokemons: (
+          name: string,
+          limit?: number,
+          offset?: number,
+          sortBy?: "number" | "alphabetical",
+        ) => Promise<interfaces.PokemonListResponse>;
+      };
+
+      const result = await searchPokemons("saur", -1, -5);
+      expect(result.results.length).toBe(3);
+      expect(result.previous).toBe(null);
+      expect(result.next).toBe(null);
+    });
+  });
 });
