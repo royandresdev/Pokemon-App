@@ -4,15 +4,7 @@ import type {
   PokemonListResponse,
 } from "../../shared/interfaces/index.js";
 import type { QueryParams } from "../../shared/interfaces/index.js";
-
-const { getEnvConfig } = require("../config/env") as {
-  getEnvConfig: () => {
-    port: number;
-    pokeApiUrl: string;
-    pokeApiSpriteUrl: string;
-    apiPublicBaseUrl: string;
-  };
-};
+import { getEnvConfig } from "../config/env.js";
 
 let pokemonCatalogInCache: PokemonListItem[] | null = null;
 

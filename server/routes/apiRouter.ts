@@ -1,17 +1,11 @@
 import express from "express";
+import { loginController } from "../controllers/loginController.js";
 
-const { loginController } = require("../controllers/loginController") as {
-  loginController: (request: unknown, response: unknown) => unknown;
-};
-const {
+import {
   listPokemonsController,
-  getPokemonByIdController,
   searchPokemonsController,
-} = require("../controllers/pokemonController") as {
-  listPokemonsController: (request: unknown, response: unknown) => unknown;
-  getPokemonByIdController: (request: unknown, response: unknown) => unknown;
-  searchPokemonsController: (request: unknown, response: unknown) => unknown;
-};
+  getPokemonByIdController,
+} from "../controllers/pokemonController.js";
 
 function createApiRouter() {
   const router = express.Router();
