@@ -71,6 +71,7 @@ const pokemonResponse: interfaces.Pokemon = {
 jest.mock("../services/pokemonService", () => ({
   getPokemonList: jest.fn().mockResolvedValue(pokemonListResponse),
   getPokemonById: jest.fn().mockResolvedValue(pokemonResponse),
+  searchPokemons: jest.fn(),
 }));
 
 describe("pokemonController", () => {
@@ -171,5 +172,55 @@ describe("pokemonController", () => {
 
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith(pokemonResponse);
+  });
+  describe("searchPokemonsController", () => {
+    it("responde con status 200 y el resultado del servicio", async () => {
+      const mockResult = { count: 1, results: [{ name: "bulbasaur" }] };
+      const { searchPokemons } = require("../services/pokemonService") as {
+        searchPokemons: jest.Mock;
+      };
+      searchPokemons.mockResolvedValueOnce(mockResult);
+
+      const { searchPokemonsController } = require("./pokemonController") as {
+        searchPokemonsController: (
+          request: { query?: { name?: string } },
+          response: {
+            status: (code: number) => { json: (payload: unknown) => unknown };
+          },
+        ) => Promise<unknown>;
+      };
+
+      const json = jest.fn();
+      const status = jest.fn(() => ({ json }));
+
+      await searchPokemonsController({ query: { name: "bulba" } }, { status });
+      expect(status).toHaveBeenCalledWith(200);
+      expect(json).toHaveBeenCalledWith(mockResult);
+      expect(searchPokemons).toHaveBeenCalledWith("bulba");
+    });
+
+    it("llama al servicio con string vacío si no hay query.name", async () => {
+      const { searchPokemons } = require("../services/pokemonService") as {
+        searchPokemons: jest.Mock;
+      };
+      searchPokemons.mockResolvedValueOnce({ count: 0, results: [] });
+
+      const { searchPokemonsController } = require("./pokemonController") as {
+        searchPokemonsController: (
+          request: { query?: { name?: string } },
+          response: {
+            status: (code: number) => { json: (payload: unknown) => unknown };
+          },
+        ) => Promise<unknown>;
+      };
+
+      const json = jest.fn();
+      const status = jest.fn(() => ({ json }));
+
+      await searchPokemonsController({ query: {} }, { status });
+      expect(searchPokemons).toHaveBeenCalledWith("");
+      expect(status).toHaveBeenCalledWith(200);
+      expect(json).toHaveBeenCalledWith({ count: 0, results: [] });
+    });
   });
 });
