@@ -94,6 +94,7 @@ describe("pokemonService", () => {
       getPokemonList: (
         limit?: number,
         offset?: number,
+        sortBy?: "number" | "alphabetical",
       ) => Promise<interfaces.PokemonListResponse>;
     };
 
@@ -149,6 +150,7 @@ describe("pokemonService", () => {
       getPokemonList: (
         limit?: number,
         offset?: number,
+        sortBy?: "number" | "alphabetical",
       ) => Promise<interfaces.PokemonListResponse>;
     };
 
@@ -225,6 +227,107 @@ describe("pokemonService", () => {
     );
   });
 
+  it("getPokemonList ordena alfabeticamente cuando sortBy es alphabetical", async () => {
+    jest.doMock("../config/env", () => ({
+      getEnvConfig: () => ({
+        port: 3000,
+        pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
+      }),
+    }));
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        count: "3",
+        next: null,
+        previous: null,
+        results: [
+          {
+            name: "bulbasaur",
+            url: "https://pokeapi.co/api/v2/pokemon/1/",
+          },
+          {
+            name: "ivysaur",
+            url: "https://pokeapi.co/api/v2/pokemon/2/",
+          },
+          {
+            name: "charmander",
+            url: "https://pokeapi.co/api/v2/pokemon/4/",
+          },
+        ],
+      }),
+    });
+
+    const { getPokemonList } = require("./pokemonService") as {
+      getPokemonList: (
+        limit?: number,
+        offset?: number,
+        sortBy?: "number" | "alphabetical",
+      ) => Promise<interfaces.PokemonListResponse>;
+    };
+
+    const result = await getPokemonList(3, 0, "alphabetical");
+
+    expect(result.results.map((pokemon) => pokemon.name)).toEqual([
+      "bulbasaur",
+      "charmander",
+      "ivysaur",
+    ]);
+    expect(result.next).toBe(null);
+  });
+
+  it("getPokemonList ordena por numero cuando sortBy es number", async () => {
+    jest.doMock("../config/env", () => ({
+      getEnvConfig: () => ({
+        port: 3000,
+        pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
+      }),
+    }));
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        count: "3",
+        next: null,
+        previous: null,
+        results: [
+          {
+            name: "wartortle",
+            url: "https://pokeapi.co/api/v2/pokemon/8/",
+          },
+          {
+            name: "ivysaur",
+            url: "https://pokeapi.co/api/v2/pokemon/2/",
+          },
+          {
+            name: "bulbasaur",
+            url: "https://pokeapi.co/api/v2/pokemon/1/",
+          },
+        ],
+      }),
+    });
+
+    const { getPokemonList } = require("./pokemonService") as {
+      getPokemonList: (
+        limit?: number,
+        offset?: number,
+        sortBy?: "number" | "alphabetical",
+      ) => Promise<interfaces.PokemonListResponse>;
+    };
+
+    const result = await getPokemonList(3, 0, "number");
+
+    expect(result.results.map((pokemon) => pokemon.name)).toEqual([
+      "bulbasaur",
+      "ivysaur",
+      "wartortle",
+    ]);
+  });
+
   it("getPokemonCatalog devuelve el catalogo completo con sprite", async () => {
     jest.doMock("../config/env", () => ({
       getEnvConfig: () => ({
@@ -298,6 +401,7 @@ describe("pokemonService", () => {
         limit: number,
         offset: number,
         apiPublicBaseUrl: string,
+        sortBy?: "number" | "alphabetical",
       ) => interfaces.PokemonListResponse;
     };
 
@@ -329,6 +433,7 @@ describe("pokemonService", () => {
       2,
       1,
       "http://localhost:3000",
+      "number",
     );
 
     expect(result.results.map((pokemon) => pokemon.name)).toEqual([
@@ -341,6 +446,66 @@ describe("pokemonService", () => {
     );
   });
 
+  it("paginatePokemonCatalog incluye sortBy alphabetical en next y previous", () => {
+    const { paginatePokemonCatalog } = require("./pokemonService") as {
+      paginatePokemonCatalog: (
+        catalog: interfaces.PokemonListResponse,
+        limit: number,
+        offset: number,
+        apiPublicBaseUrl: string,
+        sortBy?: "number" | "alphabetical",
+      ) => interfaces.PokemonListResponse;
+    };
+
+    const catalog: interfaces.PokemonListResponse = {
+      count: "5",
+      next: null,
+      previous: null,
+      results: [
+        {
+          name: "bulbasaur",
+          url: "https://pokeapi.co/api/v2/pokemon/1/",
+          sprite: "https://example.com/sprites/1.png",
+        },
+        {
+          name: "ivysaur",
+          url: "https://pokeapi.co/api/v2/pokemon/2/",
+          sprite: "https://example.com/sprites/2.png",
+        },
+        {
+          name: "venusaur",
+          url: "https://pokeapi.co/api/v2/pokemon/3/",
+          sprite: "https://example.com/sprites/3.png",
+        },
+        {
+          name: "charmander",
+          url: "https://pokeapi.co/api/v2/pokemon/4/",
+          sprite: "https://example.com/sprites/4.png",
+        },
+        {
+          name: "charmeleon",
+          url: "https://pokeapi.co/api/v2/pokemon/5/",
+          sprite: "https://example.com/sprites/5.png",
+        },
+      ],
+    };
+
+    const result = paginatePokemonCatalog(
+      catalog,
+      2,
+      2,
+      "http://localhost:3000",
+      "alphabetical",
+    );
+
+    expect(result.next).toBe(
+      "http://localhost:3000/pokemons?limit=2&offset=4&sortBy=alphabetical",
+    );
+    expect(result.previous).toBe(
+      "http://localhost:3000/pokemons?limit=2&offset=0&sortBy=alphabetical",
+    );
+  });
+
   it("paginatePokemonCatalog devuelve valores por defecto para paginacion invalida", () => {
     const { paginatePokemonCatalog } = require("./pokemonService") as {
       paginatePokemonCatalog: (
@@ -348,6 +513,7 @@ describe("pokemonService", () => {
         limit: number,
         offset: number,
         apiPublicBaseUrl: string,
+        sortBy?: "number" | "alphabetical",
       ) => interfaces.PokemonListResponse;
     };
 

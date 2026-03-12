@@ -40,6 +40,7 @@ function mapNextToLocalApi(
 async function getPokemonList(
   limit: number = 20,
   offset: number = 0,
+  sortBy: "number" | "alphabetical" = "number",
 ): Promise<interfaces.PokemonListResponse> {
   const { apiPublicBaseUrl } = getEnvConfig();
 
@@ -52,6 +53,7 @@ async function getPokemonList(
     limit,
     offset,
     apiPublicBaseUrl,
+    sortBy,
   );
 }
 
@@ -82,6 +84,7 @@ function paginatePokemonCatalog(
   limit: number,
   offset: number,
   apiPublicBaseUrl: string,
+  sortBy: "number" | "alphabetical" = "number",
 ): interfaces.PokemonListResponse {
   const totalCountFromCatalog = Number(catalog.count);
   const totalCount = Number.isFinite(totalCountFromCatalog)
@@ -90,16 +93,30 @@ function paginatePokemonCatalog(
 
   const safeLimit = limit > 0 ? Math.floor(limit) : catalog.results.length;
   const safeOffset = offset >= 0 ? Math.floor(offset) : 0;
-  const results = catalog.results.slice(safeOffset, safeOffset + safeLimit);
+
+  // Copia de los resultados para no modificar el catálogo original
+  let sortedResults = [...catalog.results];
+
+  if (sortBy === "alphabetical") {
+    sortedResults.sort((a, b) => a.name.localeCompare(b.name));
+  } else {
+    sortedResults.sort((a, b) => {
+      const idA = Number(getPokemonIdFromUrl(a.url));
+      const idB = Number(getPokemonIdFromUrl(b.url));
+      return idA - idB;
+    });
+  }
+
+  const results = sortedResults.slice(safeOffset, safeOffset + safeLimit);
 
   const next =
     safeOffset + safeLimit < totalCount
-      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${safeOffset + safeLimit}`
+      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${safeOffset + safeLimit}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
       : null;
 
   const previous =
     safeOffset > 0
-      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}`
+      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
       : null;
 
   return {

@@ -10,6 +10,7 @@ type ListPokemonsRequest = {
   query?: {
     limit?: string;
     offset?: string;
+    sortBy?: "number" | "alphabetical";
   };
 };
 
@@ -18,6 +19,7 @@ const { getPokemonList, getPokemonById } =
     getPokemonList: (
       limit?: number,
       offset?: number,
+      sortBy?: "number" | "alphabetical",
     ) => Promise<interfaces.PokemonListResponse>;
     getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
   };
@@ -45,7 +47,9 @@ async function listPokemonsController(
 ) {
   const limit = parsePaginationNumber(request.query?.limit, 20);
   const offset = parsePaginationNumber(request.query?.offset, 0);
-  const pokemonList = await getPokemonList(limit, offset);
+  const sortBy =
+    request.query?.sortBy === "alphabetical" ? "alphabetical" : "number";
+  const pokemonList = await getPokemonList(limit, offset, sortBy);
 
   return response.status(200).json(pokemonList);
 }
