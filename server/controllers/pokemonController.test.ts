@@ -75,11 +75,14 @@ jest.mock("../services/pokemonService", () => ({
 }));
 
 describe("pokemonController", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   it("listPokemonsController pasa sortBy al servicio", async () => {
     const { listPokemonsController } = require("./pokemonController") as {
       listPokemonsController: (
         request: {
-          query?: { limit?: string; offset?: string; sortBy?: string };
+          query?: { limit?: string; offset?: string; sortby?: string };
         },
         response: {
           status: (statusCode: number) => {
@@ -97,7 +100,7 @@ describe("pokemonController", () => {
     const status = jest.fn(() => ({ json }));
 
     await listPokemonsController(
-      { query: { limit: "10", offset: "5", sortBy: "alphabetical" } },
+      { query: { limit: "10", offset: "5", sortby: "alphabetical" } },
       { status },
     );
 
@@ -174,6 +177,87 @@ describe("pokemonController", () => {
     expect(json).toHaveBeenCalledWith(pokemonResponse);
   });
   describe("searchPokemonsController", () => {
+    it("pasa limit, offset y sortby al servicio", async () => {
+      const { searchPokemons } = require("../services/pokemonService") as {
+        searchPokemons: jest.Mock;
+      };
+      searchPokemons.mockResolvedValueOnce({
+        count: 1,
+        results: [{ name: "bulbasaur" }],
+      });
+
+      const { searchPokemonsController } = require("./pokemonController") as {
+        searchPokemonsController: (
+          request: {
+            query?: {
+              name?: string;
+              limit?: string;
+              offset?: string;
+              sortby?: string;
+            };
+          },
+          response: {
+            status: (code: number) => { json: (payload: unknown) => unknown };
+          },
+        ) => Promise<unknown>;
+      };
+
+      const json = jest.fn();
+      const status = jest.fn(() => ({ json }));
+
+      await searchPokemonsController(
+        {
+          query: {
+            name: "bulba",
+            limit: "5",
+            offset: "10",
+            sortby: "alphabetical",
+          },
+        },
+        { status },
+      );
+      expect(searchPokemons).toHaveBeenCalledWith(
+        "bulba",
+        5,
+        10,
+        "alphabetical",
+      );
+      expect(status).toHaveBeenCalledWith(200);
+      expect(json).toHaveBeenCalledWith({
+        count: 1,
+        results: [{ name: "bulbasaur" }],
+      });
+    });
+
+    it("usa valores por defecto si limit, offset o sortby no están en query", async () => {
+      const { searchPokemons } = require("../services/pokemonService") as {
+        searchPokemons: jest.Mock;
+      };
+      searchPokemons.mockResolvedValueOnce({
+        count: 1,
+        results: [{ name: "bulbasaur" }],
+      });
+
+      const { searchPokemonsController } = require("./pokemonController") as {
+        searchPokemonsController: (
+          request: { query?: { name?: string } },
+          response: {
+            status: (code: number) => { json: (payload: unknown) => unknown };
+          },
+        ) => Promise<unknown>;
+      };
+
+      const json = jest.fn();
+      const status = jest.fn(() => ({ json }));
+
+      await searchPokemonsController({ query: { name: "bulba" } }, { status });
+      expect(searchPokemons).toHaveBeenCalledWith("bulba", 20, 0, "number");
+      expect(status).toHaveBeenCalledWith(200);
+      expect(json).toHaveBeenCalledWith({
+        count: 1,
+        results: [{ name: "bulbasaur" }],
+      });
+    });
     it("responde con status 200 y el resultado del servicio", async () => {
       const mockResult = { count: 1, results: [{ name: "bulbasaur" }] };
       const { searchPokemons } = require("../services/pokemonService") as {
@@ -193,10 +277,12 @@ describe("pokemonController", () => {
       const json = jest.fn();
       const status = jest.fn(() => ({ json }));
 
+      const defaultArguments = [20, 0, "number"]; //valores por defecto de limit, offset y sortBy en el servicio si no se pasan desde el controlador
+
       await searchPokemonsController({ query: { name: "bulba" } }, { status });
       expect(status).toHaveBeenCalledWith(200);
       expect(json).toHaveBeenCalledWith(mockResult);
-      expect(searchPokemons).toHaveBeenCalledWith("bulba");
+      expect(searchPokemons).toHaveBeenCalledWith("bulba", ...defaultArguments);
     });
 
     it("llama al servicio con string vacío si no hay query.name", async () => {
@@ -217,8 +303,11 @@ describe("pokemonController", () => {
       const json = jest.fn();
       const status = jest.fn(() => ({ json }));
 
+      const defaultArguments = ["", 20, 0, "number"]; //valores por defecto de name, limit, offset y sortBy en el servicio si no se pasan desde el controlador
+
       await searchPokemonsController({ query: {} }, { status });
-      expect(searchPokemons).toHaveBeenCalledWith("");
+
+      expect(searchPokemons).toHaveBeenCalledWith(...defaultArguments);
       expect(status).toHaveBeenCalledWith(200);
       expect(json).toHaveBeenCalledWith({ count: 0, results: [] });
     });

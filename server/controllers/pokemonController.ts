@@ -9,9 +9,10 @@ type AppResponse = {
 
 type ListPokemonsRequest = {
   query?: {
+    name?: string;
     limit?: string;
     offset?: string;
-    sortBy?: SortBy;
+    sortby?: SortBy;
   };
 };
 
@@ -23,7 +24,12 @@ const { getPokemonList, getPokemonById, searchPokemons } =
       sortBy?: SortBy,
     ) => Promise<interfaces.PokemonListResponse>;
     getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
-    searchPokemons: (name: string) => Promise<interfaces.PokemonListResponse>;
+    searchPokemons: (
+      name: string,
+      limit?: number,
+      offset?: number,
+      sortBy?: SortBy,
+    ) => Promise<interfaces.PokemonListResponse>;
   };
 
 function parsePaginationNumber(
@@ -50,7 +56,7 @@ async function listPokemonsController(
   const limit = parsePaginationNumber(request.query?.limit, 20);
   const offset = parsePaginationNumber(request.query?.offset, 0);
   const sortBy: SortBy =
-    request.query?.sortBy === "alphabetical" ? "alphabetical" : "number";
+    request.query?.sortby === "alphabetical" ? "alphabetical" : "number";
   const pokemonList = await getPokemonList(limit, offset, sortBy);
 
   return response.status(200).json(pokemonList);
@@ -66,9 +72,17 @@ async function getPokemonByIdController(
   return response.status(200).json(pokemon);
 }
 
-async function searchPokemonsController(request: any, response: AppResponse) {
+async function searchPokemonsController(
+  request: ListPokemonsRequest,
+  response: AppResponse,
+) {
   const name = request.query?.name || "";
-  const result = await searchPokemons(name);
+  const limit = parsePaginationNumber(request.query?.limit, 20);
+  const offset = parsePaginationNumber(request.query?.offset, 0);
+  const sortBy: SortBy =
+    request.query?.sortby === "alphabetical" ? "alphabetical" : "number";
+
+  const result = await searchPokemons(name, limit, offset, sortBy);
   return response.status(200).json(result);
 }
 

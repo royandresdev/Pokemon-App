@@ -124,7 +124,7 @@ function paginatePokemonCatalog(
 }
 
 async function searchPokemons(
-  name: string,
+  name: string = "",
   limit: number = 20,
   offset: number = 0,
   sortBy: SortBy = "number",
