@@ -78,6 +78,9 @@ jest.mock("../services/pokemonService", () => ({
 }));
 
 describe("API integration", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   it("permite solicitudes CORS desde cualquier origen", async () => {
     await withServer(async (baseUrl) => {
       const response = await fetch(`${baseUrl}/login`, {
@@ -155,7 +158,7 @@ describe("API integration", () => {
       expect(response.ok).toBe(true);
     });
 
-    expect(getPokemonList).toHaveBeenCalledWith(40, 80);
+    expect(getPokemonList).toHaveBeenCalledWith(40, 80, "number");
   });
 
   it("expone GET /pokemons/:id", async () => {

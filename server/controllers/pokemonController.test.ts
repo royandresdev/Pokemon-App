@@ -74,6 +74,35 @@ jest.mock("../services/pokemonService", () => ({
 }));
 
 describe("pokemonController", () => {
+  it("listPokemonsController pasa sortBy al servicio", async () => {
+    const { listPokemonsController } = require("./pokemonController") as {
+      listPokemonsController: (
+        request: {
+          query?: { limit?: string; offset?: string; sortBy?: string };
+        },
+        response: {
+          status: (statusCode: number) => {
+            json: (payload: unknown) => unknown;
+          };
+        },
+      ) => Promise<unknown>;
+    };
+
+    const { getPokemonList } = require("../services/pokemonService") as {
+      getPokemonList: jest.Mock;
+    };
+
+    const json = jest.fn();
+    const status = jest.fn(() => ({ json }));
+
+    await listPokemonsController(
+      { query: { limit: "10", offset: "5", sortBy: "alphabetical" } },
+      { status },
+    );
+
+    expect(getPokemonList).toHaveBeenCalledWith(10, 5, "alphabetical");
+    expect(status).toHaveBeenCalledWith(200);
+  });
   it("responde con la lista de pokemons resuelta por el servicio", async () => {
     const { listPokemonsController } = require("./pokemonController") as {
       listPokemonsController: (
@@ -119,7 +148,7 @@ describe("pokemonController", () => {
       { status },
     );
 
-    expect(getPokemonList).toHaveBeenCalledWith(40, 80);
+    expect(getPokemonList).toHaveBeenCalledWith(40, 80, "number");
     expect(status).toHaveBeenCalledWith(200);
   });
 

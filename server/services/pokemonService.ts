@@ -1,4 +1,5 @@
 import type interfaces = require("../../shared/interfaces");
+import type { SortBy } from "../../shared/interfaces";
 
 const { getEnvConfig } = require("../config/env") as {
   getEnvConfig: () => {
@@ -8,6 +9,8 @@ const { getEnvConfig } = require("../config/env") as {
     apiPublicBaseUrl: string;
   };
 };
+
+let pokemonCatalogCache: interfaces.PokemonListResponse | null = null;
 
 function getPokemonIdFromUrl(url: string): string {
   const segments = url.split("/").filter(Boolean);
@@ -38,12 +41,29 @@ function mapNextToLocalApi(
 async function getPokemonList(
   limit: number = 20,
   offset: number = 0,
+  sortBy: SortBy = "number",
 ): Promise<interfaces.PokemonListResponse> {
+  const { apiPublicBaseUrl } = getEnvConfig();
+
+  if (!pokemonCatalogCache) {
+    pokemonCatalogCache = await getPokemonCatalog();
+  }
+
+  return paginatePokemonCatalog(
+    pokemonCatalogCache,
+    limit,
+    offset,
+    apiPublicBaseUrl,
+    sortBy,
+  );
+}
+
+async function getPokemonCatalog(): Promise<interfaces.PokemonListResponse> {
   const { pokeApiUrl, pokeApiSpriteUrl, apiPublicBaseUrl } = getEnvConfig();
-  const response = await fetch(`${pokeApiUrl}?limit=${limit}&offset=${offset}`);
+  const response = await fetch(`${pokeApiUrl}?limit=2000&offset=0`);
 
   if (!response.ok) {
-    throw new Error("Error al obtener la lista de pokemons");
+    throw new Error("Error al obtener el catalogo de pokemons");
   }
 
   const payload = (await response.json()) as interfaces.PokemonListResponse;
@@ -56,6 +76,54 @@ async function getPokemonList(
   return {
     ...payload,
     next: mapNextToLocalApi(payload.next, apiPublicBaseUrl),
+    results,
+  };
+}
+
+function paginatePokemonCatalog(
+  catalog: interfaces.PokemonListResponse,
+  limit: number,
+  offset: number,
+  apiPublicBaseUrl: string,
+  sortBy: SortBy = "number",
+): interfaces.PokemonListResponse {
+  const totalCountFromCatalog = Number(catalog.count);
+  const totalCount = Number.isFinite(totalCountFromCatalog)
+    ? totalCountFromCatalog
+    : catalog.results.length;
+
+  const safeLimit = limit > 0 ? Math.floor(limit) : catalog.results.length;
+  const safeOffset = offset >= 0 ? Math.floor(offset) : 0;
+
+  // Copia de los resultados para no modificar el catálogo original
+  let sortedResults = [...catalog.results];
+
+  if (sortBy === "alphabetical") {
+    sortedResults.sort((a, b) => a.name.localeCompare(b.name));
+  } else {
+    sortedResults.sort((a, b) => {
+      const idA = Number(getPokemonIdFromUrl(a.url));
+      const idB = Number(getPokemonIdFromUrl(b.url));
+      return idA - idB;
+    });
+  }
+
+  const results = sortedResults.slice(safeOffset, safeOffset + safeLimit);
+
+  const next =
+    safeOffset + safeLimit < totalCount
+      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${safeOffset + safeLimit}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
+      : null;
+
+  const previous =
+    safeOffset > 0
+      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
+      : null;
+
+  return {
+    count: catalog.count,
+    next,
+    previous,
     results,
   };
 }
@@ -75,5 +143,7 @@ async function getPokemonById(id: string): Promise<interfaces.Pokemon> {
 
 module.exports = {
   getPokemonList,
+  getPokemonCatalog,
+  paginatePokemonCatalog,
   getPokemonById,
 };
