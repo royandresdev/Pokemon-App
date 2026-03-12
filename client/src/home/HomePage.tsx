@@ -1,17 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PokemonListResponse } from "../../../shared/interfaces";
+import type { PokemonListResponse, SortBy } from "../../../shared/interfaces";
 import PokemonCard from "./PokemonCard";
 
 const HomePage = () => {
   const [pokemons, setPokemons] = useState<PokemonListResponse["results"]>([]);
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>("number");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const fetchPokemonPage = useCallback(async (url: string, append: boolean) => {
     setIsLoading(true);
 
-    const response = await fetch(url);
+    // Añadir sortBy a la URL si no está presente
+    const urlObj = new URL(url);
+    if (!urlObj.searchParams.has("sortBy")) {
+      urlObj.searchParams.set("sortBy", sortBy);
+    }
+
+    const response = await fetch(urlObj.toString());
     const payload = await response.json() as PokemonListResponse;
 
     setPokemons((currentPokemons) => (
@@ -19,17 +26,17 @@ const HomePage = () => {
     ));
     setNextPageUrl(payload.next);
     setIsLoading(false);
-  }, []);
+  }, [sortBy]);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
-      void fetchPokemonPage(`${import.meta.env.VITE_API_URL}/pokemons`, false);
+      void fetchPokemonPage(`${import.meta.env.VITE_API_URL}/pokemons?sortBy=${sortBy}`, false);
     }, 0);
 
     return () => {
       window.clearTimeout(timerId);
     };
-  }, [fetchPokemonPage]);
+  }, [fetchPokemonPage, sortBy]);
 
   useEffect(() => {
     if (!nextPageUrl || isLoading || !sentinelRef.current || typeof IntersectionObserver === "undefined") {
@@ -60,6 +67,28 @@ const HomePage = () => {
   return (
     <main>
       <h1>Pokémon App</h1>
+      <div style={{ marginBottom: "1rem" }}>
+        <label>
+          <input
+            type="radio"
+            name="sortBy"
+            value="number"
+            checked={sortBy === "number"}
+            onChange={() => setSortBy("number")}
+          />
+          Orden por número
+        </label>
+        <label style={{ marginLeft: "1rem" }}>
+          <input
+            type="radio"
+            name="sortBy"
+            value="alphabetical"
+            checked={sortBy === "alphabetical"}
+            onChange={() => setSortBy("alphabetical")}
+          />
+          Orden alfabético
+        </label>
+      </div>
       <ul>
         {pokemons.map((pokemon) => (
           <li key={pokemon.name}>

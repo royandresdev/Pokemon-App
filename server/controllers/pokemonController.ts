@@ -1,4 +1,5 @@
 import type interfaces = require("../../shared/interfaces");
+import type { SortBy } from "../../shared/interfaces";
 
 type AppResponse = {
   status: (statusCode: number) => {
@@ -10,7 +11,7 @@ type ListPokemonsRequest = {
   query?: {
     limit?: string;
     offset?: string;
-    sortBy?: "number" | "alphabetical";
+    sortBy?: SortBy;
   };
 };
 
@@ -19,7 +20,7 @@ const { getPokemonList, getPokemonById } =
     getPokemonList: (
       limit?: number,
       offset?: number,
-      sortBy?: "number" | "alphabetical",
+      sortBy?: SortBy,
     ) => Promise<interfaces.PokemonListResponse>;
     getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
   };
@@ -47,7 +48,7 @@ async function listPokemonsController(
 ) {
   const limit = parsePaginationNumber(request.query?.limit, 20);
   const offset = parsePaginationNumber(request.query?.offset, 0);
-  const sortBy =
+  const sortBy: SortBy =
     request.query?.sortBy === "alphabetical" ? "alphabetical" : "number";
   const pokemonList = await getPokemonList(limit, offset, sortBy);
 

@@ -1,4 +1,5 @@
 import type interfaces = require("../../shared/interfaces");
+import type { SortBy } from "../../shared/interfaces";
 
 const { getEnvConfig } = require("../config/env") as {
   getEnvConfig: () => {
@@ -40,7 +41,7 @@ function mapNextToLocalApi(
 async function getPokemonList(
   limit: number = 20,
   offset: number = 0,
-  sortBy: "number" | "alphabetical" = "number",
+  sortBy: SortBy = "number",
 ): Promise<interfaces.PokemonListResponse> {
   const { apiPublicBaseUrl } = getEnvConfig();
 
@@ -84,7 +85,7 @@ function paginatePokemonCatalog(
   limit: number,
   offset: number,
   apiPublicBaseUrl: string,
-  sortBy: "number" | "alphabetical" = "number",
+  sortBy: SortBy = "number",
 ): interfaces.PokemonListResponse {
   const totalCountFromCatalog = Number(catalog.count);
   const totalCount = Number.isFinite(totalCountFromCatalog)

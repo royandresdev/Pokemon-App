@@ -1,3 +1,4 @@
+export type SortBy = "number" | "alphabetical";
 export interface PokemonListResponse {
   count: number | string;
   next: string | null;
