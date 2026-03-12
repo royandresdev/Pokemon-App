@@ -15,7 +15,7 @@ type ListPokemonsRequest = {
   };
 };
 
-const { getPokemonList, getPokemonById } =
+const { getPokemonList, getPokemonById, searchPokemons } =
   require("../services/pokemonService") as {
     getPokemonList: (
       limit?: number,
@@ -23,6 +23,7 @@ const { getPokemonList, getPokemonById } =
       sortBy?: SortBy,
     ) => Promise<interfaces.PokemonListResponse>;
     getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
+    searchPokemons: (name: string) => Promise<interfaces.PokemonListResponse>;
   };
 
 function parsePaginationNumber(
@@ -65,7 +66,14 @@ async function getPokemonByIdController(
   return response.status(200).json(pokemon);
 }
 
+async function searchPokemonsController(request: any, response: AppResponse) {
+  const name = request.query?.name || "";
+  const result = await searchPokemons(name);
+  return response.status(200).json(result);
+}
+
 module.exports = {
   listPokemonsController,
   getPokemonByIdController,
+  searchPokemonsController,
 };

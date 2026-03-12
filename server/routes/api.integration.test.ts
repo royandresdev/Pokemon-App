@@ -72,9 +72,23 @@ const pokemonResponseMock: interfaces.Pokemon = {
   weight: 69,
 };
 
+const pokemonSearchMock = {
+  count: 1,
+  next: null,
+  previous: null,
+  results: [
+    {
+      name: "bulbasaur",
+      url: "https://pokeapi.co/api/v2/pokemon/1/",
+      sprite: "https://example.com/sprites/front.png",
+    },
+  ],
+};
+
 jest.mock("../services/pokemonService", () => ({
   getPokemonList: jest.fn().mockResolvedValue(pokemonListResponseMock),
   getPokemonById: jest.fn().mockResolvedValue(pokemonResponseMock),
+  searchPokemons: jest.fn().mockResolvedValue(pokemonSearchMock),
 }));
 
 describe("API integration", () => {
@@ -180,6 +194,23 @@ describe("API integration", () => {
       expect(body.name).toBe("bulbasaur");
       expect(Array.isArray(body.types)).toBe(true);
       expect(body.cries.latest).toBe("https://example.com/cries/latest.ogg");
+    });
+  });
+
+  it("expone GET /pokemons/search", async () => {
+    await withServer(async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/pokemons/search?name=bulba`);
+      expect(response.status).not.toBe(404);
+    });
+  });
+
+  it("devuelve pokemons filtrados por nombre en /pokemons/search", async () => {
+    await withServer(async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/pokemons/search?name=bulba`);
+      expect(response.ok).toBe(true);
+      const body = await response.json();
+      expect(body.results.length).toBe(1);
+      expect(body.results[0].name).toBe("bulbasaur");
     });
   });
 });

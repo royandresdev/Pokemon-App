@@ -128,6 +128,8 @@ function paginatePokemonCatalog(
   };
 }
 
+async function searchPokemons(name: string) {}
+
 async function getPokemonById(id: string): Promise<interfaces.Pokemon> {
   const { pokeApiUrl } = getEnvConfig();
   const response = await fetch(`${pokeApiUrl}/${id}`);
@@ -146,4 +148,5 @@ module.exports = {
   getPokemonCatalog,
   paginatePokemonCatalog,
   getPokemonById,
+  searchPokemons,
 };
