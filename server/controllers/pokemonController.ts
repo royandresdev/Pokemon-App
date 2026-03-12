@@ -37,7 +37,7 @@ function parsePaginationNumber(
   return Math.floor(parsedValue);
 }
 
-export async function listPokemonsController(
+async function listPokemonsController(
   request: ListPokemonsRequest,
   response: AppResponse,
 ) {
@@ -65,7 +65,7 @@ async function searchPokemonsController(
   return response.status(200).json(result);
 }
 
-module.exports = {
+export {
   listPokemonsController,
   getPokemonByIdController,
   searchPokemonsController,

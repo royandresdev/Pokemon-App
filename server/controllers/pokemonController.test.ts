@@ -1,7 +1,11 @@
-import type interfaces = require("../../shared/interfaces");
+import type {
+  Pokemon,
+  PokemonListResponse,
+  SortBy,
+} from "../../shared/interfaces/index.js";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-const pokemonListResponse: interfaces.PokemonListResponse = {
+const pokemonListResponse: PokemonListResponse = {
   count: "1350",
   next: "https://pokeapi.co/api/v2/pokemon/?offset=20&limit=20",
   previous: null,
@@ -14,7 +18,7 @@ const pokemonListResponse: interfaces.PokemonListResponse = {
   ],
 };
 
-const pokemonResponse: interfaces.Pokemon = {
+const pokemonResponse: Pokemon = {
   abilities: [
     {
       ability: { name: "overgrow", url: "https://example.com/ability/65" },
@@ -85,9 +89,17 @@ describe("pokemonController", () => {
 
     const { listPokemonsController } = await import("./pokemonController.js");
 
+    const query = {
+      limit: "10",
+      offset: "5",
+      sortby: "alphabetical" as SortBy,
+    };
+
+    listPokemonsController({ query: query }, { status });
+
     const { getPokemonList } = await import("../services/pokemonService.js");
 
-    expect(getPokemonList).toHaveBeenCalledWith(10, 5, "alphabetical");
+    expect(getPokemonList).toHaveBeenCalledWith(query);
     expect(status).toHaveBeenCalledWith(200);
   });
   it("responde con la lista de pokemons resuelta por el servicio", async () => {
@@ -95,107 +107,99 @@ describe("pokemonController", () => {
     const json = vi.fn();
     const status = vi.fn(() => ({ json }));
     await listPokemonsController({}, { status });
+
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith(pokemonListResponse);
   });
 
   it("listPokemonsController pasa limit y offset al servicio", async () => {
-    const { listPokemonsController } = await import("./pokemonController");
-    const { getPokemonList } = await import("../services/pokemonService");
+    const { listPokemonsController } = await import("./pokemonController.js");
+    const { getPokemonList } = await import("../services/pokemonService.js");
     const json = vi.fn();
     const status = vi.fn(() => ({ json }));
-    await listPokemonsController(
-      { query: { limit: "40", offset: "80" } },
-      { status },
-    );
-    expect(getPokemonList).toHaveBeenCalledWith(40, 80, "number");
+    const query = { limit: "40", offset: "80" };
+    await listPokemonsController({ query }, { status });
+    expect(getPokemonList).toHaveBeenCalledWith(query);
     expect(status).toHaveBeenCalledWith(200);
   });
 
   it("getPokemonByIdController responde con el pokemon del servicio", async () => {
-    const { getPokemonByIdController } = await import("./pokemonController");
+    const { getPokemonByIdController } = await import("./pokemonController.js");
     const json = vi.fn();
     const status = vi.fn(() => ({ json }));
+
     await getPokemonByIdController({ params: { id: "1" } }, { status });
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith(pokemonResponse);
   });
   describe("searchPokemonsController", () => {
     it("pasa limit, offset y sortby al servicio", async () => {
-      const { searchPokemons } = await import("../services/pokemonService");
-      searchPokemons.mockResolvedValueOnce({
+      const { searchPokemons } = await import("../services/pokemonService.js");
+
+      const mockResult = {
         count: 1,
-        results: [{ name: "bulbasaur" }],
-      });
-      const { searchPokemonsController } = await import("./pokemonController");
+        next: null,
+        previous: null,
+        results: [
+          {
+            name: "bulbasaur",
+            url: "https://example.com/pokemon/1",
+            sprite: "https://example.com/sprites/front.png",
+          },
+        ],
+      };
+
+      vi.mocked(searchPokemons).mockResolvedValueOnce(mockResult);
+
+      const { searchPokemonsController } =
+        await import("./pokemonController.js");
       const json = vi.fn();
       const status = vi.fn(() => ({ json }));
+      const query = {
+        name: "bulba",
+        limit: "5",
+        offset: "10",
+        sortby: "alphabetical" as SortBy,
+      };
       await searchPokemonsController(
         {
-          query: {
-            name: "bulba",
-            limit: "5",
-            offset: "10",
-            sortby: "alphabetical",
-          },
+          query,
         },
         { status },
       );
-      expect(searchPokemons).toHaveBeenCalledWith(
-        "bulba",
-        5,
-        10,
-        "alphabetical",
-      );
-      expect(status).toHaveBeenCalledWith(200);
-      expect(json).toHaveBeenCalledWith({
-        count: 1,
-        results: [{ name: "bulbasaur" }],
-      });
-    });
-
-    it("usa valores por defecto si limit, offset o sortby no están en query", async () => {
-      const { searchPokemons } = await import("../services/pokemonService");
-      searchPokemons.mockResolvedValueOnce({
-        count: 1,
-        results: [{ name: "bulbasaur" }],
-      });
-      const { searchPokemonsController } = await import("./pokemonController");
-      const json = vi.fn();
-      const status = vi.fn(() => ({ json }));
-      await searchPokemonsController({ query: { name: "bulba" } }, { status });
-      expect(searchPokemons).toHaveBeenCalledWith("bulba", 20, 0, "number");
-      expect(status).toHaveBeenCalledWith(200);
-      expect(json).toHaveBeenCalledWith({
-        count: 1,
-        results: [{ name: "bulbasaur" }],
-      });
-    });
-    it("responde con status 200 y el resultado del servicio", async () => {
-      const mockResult = { count: 1, results: [{ name: "bulbasaur" }] };
-      const { searchPokemons } = await import("../services/pokemonService");
-      searchPokemons.mockResolvedValueOnce(mockResult);
-      const { searchPokemonsController } = await import("./pokemonController");
-      const json = vi.fn();
-      const status = vi.fn(() => ({ json }));
-      const defaultArguments = [20, 0, "number"];
-      await searchPokemonsController({ query: { name: "bulba" } }, { status });
+      expect(searchPokemons).toHaveBeenCalledWith(query);
       expect(status).toHaveBeenCalledWith(200);
       expect(json).toHaveBeenCalledWith(mockResult);
-      expect(searchPokemons).toHaveBeenCalledWith("bulba", ...defaultArguments);
     });
 
-    it("llama al servicio con string vacío si no hay query.name", async () => {
-      const { searchPokemons } = await import("../services/pokemonService");
-      searchPokemons.mockResolvedValueOnce({ count: 0, results: [] });
-      const { searchPokemonsController } = await import("./pokemonController");
+    it("responde con status 200 y el resultado del servicio", async () => {
+      const mockResult: PokemonListResponse = {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            name: "bulbasaur",
+            url: "https://example.com/pokemon/1",
+            sprite: "https://example.com/sprites/front.png",
+          },
+        ],
+      };
+
+      const { searchPokemons } = await import("../services/pokemonService.js");
+      vi.mocked(searchPokemons).mockResolvedValueOnce(mockResult);
+
+      const { searchPokemonsController } =
+        await import("./pokemonController.js");
       const json = vi.fn();
       const status = vi.fn(() => ({ json }));
-      const defaultArguments = ["", 20, 0, "number"];
-      await searchPokemonsController({ query: {} }, { status });
-      expect(searchPokemons).toHaveBeenCalledWith(...defaultArguments);
+
+      const query = { name: "bulba" };
+
+      await searchPokemonsController({ query }, { status });
       expect(status).toHaveBeenCalledWith(200);
-      expect(json).toHaveBeenCalledWith({ count: 0, results: [] });
+      expect(json).toHaveBeenCalledWith(mockResult);
+      expect(searchPokemons).toHaveBeenCalledWith(query);
     });
   });
 });
