@@ -41,25 +41,18 @@ async function getPokemonList(
   limit: number = 20,
   offset: number = 0,
 ): Promise<interfaces.PokemonListResponse> {
-  const { pokeApiUrl, pokeApiSpriteUrl, apiPublicBaseUrl } = getEnvConfig();
-  const response = await fetch(`${pokeApiUrl}?limit=${limit}&offset=${offset}`);
+  const { apiPublicBaseUrl } = getEnvConfig();
 
-  if (!response.ok) {
-    throw new Error("Error al obtener la lista de pokemons");
+  if (!pokemonCatalogCache) {
+    pokemonCatalogCache = await getPokemonCatalog();
   }
 
-  const payload = (await response.json()) as interfaces.PokemonListResponse;
-
-  const results = payload.results.map((pokemon) => ({
-    ...pokemon,
-    sprite: `${pokeApiSpriteUrl}/${getPokemonIdFromUrl(pokemon.url)}.png`,
-  }));
-
-  return {
-    ...payload,
-    next: mapNextToLocalApi(payload.next, apiPublicBaseUrl),
-    results,
-  };
+  return paginatePokemonCatalog(
+    pokemonCatalogCache,
+    limit,
+    offset,
+    apiPublicBaseUrl,
+  );
 }
 
 async function getPokemonCatalog(): Promise<interfaces.PokemonListResponse> {

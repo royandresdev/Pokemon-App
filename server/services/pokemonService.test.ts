@@ -100,7 +100,7 @@ describe("pokemonService", () => {
     const result = await getPokemonList();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://example.com/pokemon?limit=20&offset=0",
+      "https://example.com/pokemon?limit=2000&offset=0",
     );
 
     expect(result).toEqual(
@@ -164,6 +164,65 @@ describe("pokemonService", () => {
     expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.png");
     expect(result.results[1]!.sprite).toBe("https://example.com/sprites/2.png");
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("getPokemonList reutiliza el catalogo cacheado entre llamadas", async () => {
+    jest.doMock("../config/env", () => ({
+      getEnvConfig: () => ({
+        port: 3000,
+        pokeApiUrl: "https://example.com/pokemon",
+        pokeApiSpriteUrl: "https://example.com/sprites",
+        apiPublicBaseUrl: "http://localhost:3000",
+      }),
+    }));
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        count: "3",
+        next: null,
+        previous: null,
+        results: [
+          {
+            name: "bulbasaur",
+            url: "https://pokeapi.co/api/v2/pokemon/1/",
+          },
+          {
+            name: "ivysaur",
+            url: "https://pokeapi.co/api/v2/pokemon/2/",
+          },
+          {
+            name: "venusaur",
+            url: "https://pokeapi.co/api/v2/pokemon/3/",
+          },
+        ],
+      }),
+    });
+
+    const { getPokemonList } = require("./pokemonService") as {
+      getPokemonList: (
+        limit?: number,
+        offset?: number,
+      ) => Promise<interfaces.PokemonListResponse>;
+    };
+
+    const firstPage = await getPokemonList(2, 0);
+    const secondPage = await getPokemonList(2, 2);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(firstPage.results.map((pokemon) => pokemon.name)).toEqual([
+      "bulbasaur",
+      "ivysaur",
+    ]);
+    expect(secondPage.results.map((pokemon) => pokemon.name)).toEqual([
+      "venusaur",
+    ]);
+    expect(firstPage.next).toBe(
+      "http://localhost:3000/pokemons?limit=2&offset=2",
+    );
+    expect(secondPage.previous).toBe(
+      "http://localhost:3000/pokemons?limit=2&offset=0",
+    );
   });
 
   it("getPokemonCatalog devuelve el catalogo completo con sprite", async () => {
@@ -351,7 +410,7 @@ describe("pokemonService", () => {
     };
 
     await expect(getPokemonList()).rejects.toThrow(
-      "Error al obtener la lista de pokemons",
+      "Error al obtener el catalogo de pokemons",
     );
   });
 
