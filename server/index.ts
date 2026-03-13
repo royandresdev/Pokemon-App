@@ -1,9 +1,10 @@
 import { loadEnvironment, getEnvConfig } from "./config/env.js";
 import { createServer } from "./app/createServer.js";
+import { fileURLToPath } from "url";
 
 loadEnvironment();
 
-if (require.main === module) {
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
   const { port } = getEnvConfig();
   const app = createServer();
 
@@ -12,4 +13,4 @@ if (require.main === module) {
   });
 }
 
-export {createServer}
+export { createServer };
