@@ -1,8 +1,10 @@
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 describe("env config", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
     process.env = { ...originalEnv };
   });
 
@@ -10,25 +12,24 @@ describe("env config", () => {
     process.env = originalEnv;
   });
 
-  it("carga dotenv al inicializar el entorno", () => {
-    const configMock = jest.fn();
+  it("carga dotenv al inicializar el entorno", async () => {
+    const configMock = vi.fn();
 
-    jest.doMock("dotenv", () => ({
+    vi.doMock("dotenv", () => ({
       config: configMock,
+      default: { config: configMock },
     }));
 
-    const { loadEnvironment } = require("./env") as {
-      loadEnvironment: () => void;
-    };
+    const { loadEnvironment } = await import("./env.js");
 
     loadEnvironment();
 
     expect(configMock).toHaveBeenCalledTimes(1);
   });
 
-  it("devuelve la configuración desde process.env", () => {
-    jest.doMock("dotenv", () => ({
-      config: jest.fn(),
+  it("devuelve la configuración desde process.env", async () => {
+    vi.doMock("dotenv", () => ({
+      config: vi.fn(),
     }));
 
     process.env.PORT = "4500";
@@ -36,14 +37,7 @@ describe("env config", () => {
     process.env.POKE_API_SPRITE_URL = "https://example.com/sprites";
     process.env.API_PUBLIC_BASE_URL = "https://api.example.com";
 
-    const { getEnvConfig } = require("./env") as {
-      getEnvConfig: () => {
-        port: number;
-        pokeApiUrl: string;
-        pokeApiSpriteUrl: string;
-        apiPublicBaseUrl: string;
-      };
-    };
+    const { getEnvConfig } = await import("./env.js");
 
     expect(getEnvConfig()).toEqual({
       port: 4500,
@@ -53,42 +47,38 @@ describe("env config", () => {
     });
   });
 
-  it("lanza un error claro cuando POKE_API_URL no está definida", () => {
-    jest.doMock("dotenv", () => ({
-      config: jest.fn(),
+  it("lanza un error claro cuando POKE_API_URL no está definida", async () => {
+    vi.doMock("dotenv", () => ({
+      config: vi.fn(),
     }));
 
     delete process.env.PORT;
     delete process.env.POKE_API_URL;
 
-    const { getEnvConfig } = require("./env") as {
-      getEnvConfig: () => { port: number; pokeApiUrl: string };
-    };
+    const { getEnvConfig } = await import("./env.js");
 
     expect(() => getEnvConfig()).toThrow("POKE_API_URL no está definida");
   });
 
-  it("lanza un error claro cuando POKE_API_SPRITE_URL no está definida", () => {
-    jest.doMock("dotenv", () => ({
-      config: jest.fn(),
+  it("lanza un error claro cuando POKE_API_SPRITE_URL no está definida", async () => {
+    vi.doMock("dotenv", () => ({
+      config: vi.fn(),
     }));
 
     process.env.PORT = "3000";
     process.env.POKE_API_URL = "https://example.com/pokemon";
     delete process.env.POKE_API_SPRITE_URL;
 
-    const { getEnvConfig } = require("./env") as {
-      getEnvConfig: () => { port: number; pokeApiUrl: string };
-    };
+    const { getEnvConfig } = await import("./env.js");
 
     expect(() => getEnvConfig()).toThrow(
       "POKE_API_SPRITE_URL no está definida",
     );
   });
 
-  it("lanza un error claro cuando API_PUBLIC_BASE_URL no está definida", () => {
-    jest.doMock("dotenv", () => ({
-      config: jest.fn(),
+  it("lanza un error claro cuando API_PUBLIC_BASE_URL no está definida", async () => {
+    vi.doMock("dotenv", () => ({
+      config: vi.fn(),
     }));
 
     process.env.PORT = "3000";
@@ -96,13 +86,7 @@ describe("env config", () => {
     process.env.POKE_API_SPRITE_URL = "https://example.com/sprites";
     delete process.env.API_PUBLIC_BASE_URL;
 
-    const { getEnvConfig } = require("./env") as {
-      getEnvConfig: () => {
-        port: number;
-        pokeApiUrl: string;
-        pokeApiSpriteUrl: string;
-      };
-    };
+    const { getEnvConfig } = await import("./env.js");
 
     expect(() => getEnvConfig()).toThrow(
       "API_PUBLIC_BASE_URL no está definida",
