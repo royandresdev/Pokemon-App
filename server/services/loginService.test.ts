@@ -1,11 +1,8 @@
+import { describe, expect, it } from "vitest";
+
 describe("loginService", () => {
-  it("devuelve 400 si el body contiene campos no permitidos", () => {
-    const { getLoginResult } = require("./loginService") as {
-      getLoginResult: (body: unknown) => {
-        statusCode: number;
-        payload: unknown;
-      };
-    };
+  it("devuelve 400 si el body contiene campos no permitidos", async () => {
+    const { getLoginResult } = await import("./loginService.js");
 
     const result = getLoginResult({
       username: "admin",
@@ -19,13 +16,8 @@ describe("loginService", () => {
     });
   });
 
-  it("devuelve 200 para credenciales válidas", () => {
-    const { getLoginResult } = require("./loginService") as {
-      getLoginResult: (body: unknown) => {
-        statusCode: number;
-        payload: unknown;
-      };
-    };
+  it("devuelve 200 para credenciales válidas", async () => {
+    const { getLoginResult } = await import("./loginService.js");
 
     const result = getLoginResult({
       username: "admin",
@@ -36,13 +28,8 @@ describe("loginService", () => {
     expect(result.payload).toEqual({ ok: true });
   });
 
-  it("devuelve 401 para credenciales inválidas", () => {
-    const { getLoginResult } = require("./loginService") as {
-      getLoginResult: (body: unknown) => {
-        statusCode: number;
-        payload: unknown;
-      };
-    };
+  it("devuelve 401 para credenciales inválidas", async () => {
+    const { getLoginResult } = await import("./loginService.js");
 
     const result = getLoginResult({
       username: "ash",

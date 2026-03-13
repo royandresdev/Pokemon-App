@@ -6,6 +6,13 @@ export interface PokemonListResponse {
   results: PokemonListItem[];
 }
 
+export interface QueryParams {
+  name?: string;
+  limit?: string;
+  offset?: string;
+  sortby?: SortBy;
+}
+
 export interface PokemonListItem {
   name: string;
   url: string;

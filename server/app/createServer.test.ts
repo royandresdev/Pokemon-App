@@ -1,13 +1,8 @@
+import { describe, expect, it } from "vitest";
+
 describe("createServer", () => {
-  it("devuelve una app express configurada", () => {
-    const { createServer } = require("./createServer") as {
-      createServer: () => {
-        use?: unknown;
-        post?: unknown;
-        get?: unknown;
-        listen?: unknown;
-      };
-    };
+  it("devuelve una app express configurada", async () => {
+    const { createServer } = await import("./createServer.js");
 
     const app = createServer();
 

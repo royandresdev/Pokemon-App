@@ -1,5 +1,9 @@
-import type interfaces = require("../../shared/interfaces");
-import type { SortBy } from "../../shared/interfaces";
+import type { SortBy } from "../../shared/interfaces/index.js";
+import {
+  getPokemonList,
+  getPokemonById,
+  searchPokemons,
+} from "../services/pokemonService.js";
 
 type AppResponse = {
   status: (statusCode: number) => {
@@ -9,21 +13,12 @@ type AppResponse = {
 
 type ListPokemonsRequest = {
   query?: {
+    name?: string;
     limit?: string;
     offset?: string;
-    sortBy?: SortBy;
+    sortby?: SortBy;
   };
 };
-
-const { getPokemonList, getPokemonById } =
-  require("../services/pokemonService") as {
-    getPokemonList: (
-      limit?: number,
-      offset?: number,
-      sortBy?: SortBy,
-    ) => Promise<interfaces.PokemonListResponse>;
-    getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
-  };
 
 function parsePaginationNumber(
   value: string | undefined,
@@ -46,11 +41,7 @@ async function listPokemonsController(
   request: ListPokemonsRequest,
   response: AppResponse,
 ) {
-  const limit = parsePaginationNumber(request.query?.limit, 20);
-  const offset = parsePaginationNumber(request.query?.offset, 0);
-  const sortBy: SortBy =
-    request.query?.sortBy === "alphabetical" ? "alphabetical" : "number";
-  const pokemonList = await getPokemonList(limit, offset, sortBy);
+  const pokemonList = await getPokemonList(request.query || {});
 
   return response.status(200).json(pokemonList);
 }
@@ -65,7 +56,17 @@ async function getPokemonByIdController(
   return response.status(200).json(pokemon);
 }
 
-module.exports = {
+async function searchPokemonsController(
+  request: ListPokemonsRequest,
+  response: AppResponse,
+) {
+  const result = await searchPokemons(request.query || {});
+
+  return response.status(200).json(result);
+}
+
+export {
   listPokemonsController,
   getPokemonByIdController,
+  searchPokemonsController,
 };

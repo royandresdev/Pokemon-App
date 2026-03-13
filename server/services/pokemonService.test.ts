@@ -1,16 +1,22 @@
-import type interfaces = require("../../shared/interfaces");
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  Pokemon,
+  PokemonListItem,
+  PokemonListResponse,
+  QueryParams,
+} from "../../shared/interfaces/index.js";
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 global.fetch = fetchMock as typeof fetch;
 
 describe("pokemonService", () => {
   beforeEach(() => {
     fetchMock.mockReset();
-    jest.resetModules();
+    vi.resetModules();
   });
 
-  const pokemonResponse: interfaces.Pokemon = {
+  const pokemonResponse: Pokemon = {
     abilities: [
       {
         ability: { name: "overgrow", url: "https://example.com/ability/65" },
@@ -66,7 +72,7 @@ describe("pokemonService", () => {
   };
 
   it("devuelve la estructura paginada de pokemons", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -78,7 +84,7 @@ describe("pokemonService", () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        count: "1350",
+        count: "1",
         next: "https://pokeapi.co/api/v2/pokemon?offset=20&limit=20",
         previous: null,
         results: [
@@ -90,15 +96,9 @@ describe("pokemonService", () => {
       }),
     });
 
-    const { getPokemonList } = require("./pokemonService") as {
-      getPokemonList: (
-        limit?: number,
-        offset?: number,
-        sortBy?: "number" | "alphabetical",
-      ) => Promise<interfaces.PokemonListResponse>;
-    };
+    const { getPokemonList } = await import("./pokemonService.js");
 
-    const result = await getPokemonList();
+    const result = await getPokemonList({});
 
     expect(fetchMock).toHaveBeenCalledWith(
       "https://example.com/pokemon?limit=2000&offset=0",
@@ -106,8 +106,8 @@ describe("pokemonService", () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        count: "1350",
-        next: "http://localhost:3000/pokemons?limit=20&offset=20",
+        count: 1,
+        next: null,
         previous: null,
         results: expect.any(Array),
       }),
@@ -118,7 +118,7 @@ describe("pokemonService", () => {
   });
 
   it("devuelve pokemons con name, url y sprite", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -130,7 +130,7 @@ describe("pokemonService", () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        count: "1350",
+        count: 2,
         next: null,
         previous: null,
         results: [
@@ -146,15 +146,9 @@ describe("pokemonService", () => {
       }),
     });
 
-    const { getPokemonList } = require("./pokemonService") as {
-      getPokemonList: (
-        limit?: number,
-        offset?: number,
-        sortBy?: "number" | "alphabetical",
-      ) => Promise<interfaces.PokemonListResponse>;
-    };
+    const { getPokemonList } = await import("./pokemonService.js");
 
-    const result = await getPokemonList();
+    const result = await getPokemonList({});
 
     expect(result.results.length).toBeGreaterThan(0);
     result.results.forEach((pokemon) => {
@@ -169,7 +163,7 @@ describe("pokemonService", () => {
   });
 
   it("getPokemonList reutiliza el catalogo cacheado entre llamadas", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -181,7 +175,7 @@ describe("pokemonService", () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        count: "3",
+        count: 3,
         next: null,
         previous: null,
         results: [
@@ -201,15 +195,12 @@ describe("pokemonService", () => {
       }),
     });
 
-    const { getPokemonList } = require("./pokemonService") as {
-      getPokemonList: (
-        limit?: number,
-        offset?: number,
-      ) => Promise<interfaces.PokemonListResponse>;
-    };
+    const { getPokemonList } = await import("./pokemonService.js");
 
-    const firstPage = await getPokemonList(2, 0);
-    const secondPage = await getPokemonList(2, 2);
+    const query: QueryParams = { limit: "2", offset: "0" };
+
+    const firstPage = await getPokemonList(query);
+    const secondPage = await getPokemonList({ limit: "2", offset: "2" });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(firstPage.results.map((pokemon) => pokemon.name)).toEqual([
@@ -228,7 +219,7 @@ describe("pokemonService", () => {
   });
 
   it("getPokemonList ordena alfabeticamente cuando sortBy es alphabetical", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -260,15 +251,15 @@ describe("pokemonService", () => {
       }),
     });
 
-    const { getPokemonList } = require("./pokemonService") as {
-      getPokemonList: (
-        limit?: number,
-        offset?: number,
-        sortBy?: "number" | "alphabetical",
-      ) => Promise<interfaces.PokemonListResponse>;
+    const { getPokemonList } = await import("./pokemonService.js");
+
+    const query: QueryParams = {
+      limit: "3",
+      offset: "0",
+      sortby: "alphabetical",
     };
 
-    const result = await getPokemonList(3, 0, "alphabetical");
+    const result = await getPokemonList(query);
 
     expect(result.results.map((pokemon) => pokemon.name)).toEqual([
       "bulbasaur",
@@ -279,7 +270,7 @@ describe("pokemonService", () => {
   });
 
   it("getPokemonList ordena por numero cuando sortBy es number", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -311,15 +302,10 @@ describe("pokemonService", () => {
       }),
     });
 
-    const { getPokemonList } = require("./pokemonService") as {
-      getPokemonList: (
-        limit?: number,
-        offset?: number,
-        sortBy?: "number" | "alphabetical",
-      ) => Promise<interfaces.PokemonListResponse>;
-    };
+    const { getPokemonList } = await import("./pokemonService.js");
 
-    const result = await getPokemonList(3, 0, "number");
+    const query: QueryParams = { limit: "3", offset: "0", sortby: "number" };
+    const result = await getPokemonList(query);
 
     expect(result.results.map((pokemon) => pokemon.name)).toEqual([
       "bulbasaur",
@@ -329,7 +315,7 @@ describe("pokemonService", () => {
   });
 
   it("getPokemonCatalog devuelve el catalogo completo con sprite", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -357,24 +343,19 @@ describe("pokemonService", () => {
       }),
     });
 
-    const { getPokemonCatalog } = require("./pokemonService") as {
-      getPokemonCatalog: () => Promise<interfaces.PokemonListResponse>;
-    };
+    const { getPokemonCatalog } = await import("./pokemonService.js");
 
     const result = await getPokemonCatalog();
 
     expect(fetchMock).toHaveBeenCalledWith(
       "https://example.com/pokemon?limit=2000&offset=0",
     );
-    expect(result.results).toHaveLength(2);
-    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.png");
-    expect(result.next).toBe(
-      "http://localhost:3000/pokemons?limit=2000&offset=2000",
-    );
+    expect(result).toHaveLength(2);
+    expect(result[0]!.sprite).toBe("https://example.com/sprites/1.png");
   });
 
   it("getPokemonCatalog lanza error si PokeAPI falla", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -385,55 +366,40 @@ describe("pokemonService", () => {
 
     fetchMock.mockResolvedValueOnce({ ok: false });
 
-    const { getPokemonCatalog } = require("./pokemonService") as {
-      getPokemonCatalog: () => Promise<interfaces.PokemonListResponse>;
-    };
+    const { getPokemonCatalog } = await import("./pokemonService.js");
 
     await expect(getPokemonCatalog()).rejects.toThrow(
       "Error al obtener el catalogo de pokemons",
     );
   });
 
-  it("paginatePokemonCatalog devuelve slice con next y previous calculados", () => {
-    const { paginatePokemonCatalog } = require("./pokemonService") as {
-      paginatePokemonCatalog: (
-        catalog: interfaces.PokemonListResponse,
-        limit: number,
-        offset: number,
-        apiPublicBaseUrl: string,
-        sortBy?: "number" | "alphabetical",
-      ) => interfaces.PokemonListResponse;
-    };
+  it("paginatePokemonCatalog devuelve slice con next y previous calculados", async () => {
+    const { paginatePokemonCatalog } = await import("./pokemonService.js");
 
-    const catalog: interfaces.PokemonListResponse = {
-      count: "3",
-      next: null,
-      previous: null,
-      results: [
-        {
-          name: "bulbasaur",
-          url: "https://pokeapi.co/api/v2/pokemon/1/",
-          sprite: "https://example.com/sprites/1.png",
-        },
-        {
-          name: "ivysaur",
-          url: "https://pokeapi.co/api/v2/pokemon/2/",
-          sprite: "https://example.com/sprites/2.png",
-        },
-        {
-          name: "venusaur",
-          url: "https://pokeapi.co/api/v2/pokemon/3/",
-          sprite: "https://example.com/sprites/3.png",
-        },
-      ],
-    };
+    const catalog: PokemonListItem[] = [
+      {
+        name: "bulbasaur",
+        url: "https://pokeapi.co/api/v2/pokemon/1/",
+        sprite: "https://example.com/sprites/1.png",
+      },
+      {
+        name: "ivysaur",
+        url: "https://pokeapi.co/api/v2/pokemon/2/",
+        sprite: "https://example.com/sprites/2.png",
+      },
+      {
+        name: "venusaur",
+        url: "https://pokeapi.co/api/v2/pokemon/3/",
+        sprite: "https://example.com/sprites/3.png",
+      },
+    ];
+
+    const query: QueryParams = { limit: "2", offset: "1", sortby: "number" };
 
     const result = paginatePokemonCatalog(
       catalog,
-      2,
-      1,
-      "http://localhost:3000",
-      "number",
+      "http://localhost:3000/pokemons",
+      query,
     );
 
     expect(result.results.map((pokemon) => pokemon.name)).toEqual([
@@ -446,56 +412,47 @@ describe("pokemonService", () => {
     );
   });
 
-  it("paginatePokemonCatalog incluye sortBy alphabetical en next y previous", () => {
-    const { paginatePokemonCatalog } = require("./pokemonService") as {
-      paginatePokemonCatalog: (
-        catalog: interfaces.PokemonListResponse,
-        limit: number,
-        offset: number,
-        apiPublicBaseUrl: string,
-        sortBy?: "number" | "alphabetical",
-      ) => interfaces.PokemonListResponse;
-    };
+  it("paginatePokemonCatalog incluye sortBy alphabetical en next y previous", async () => {
+    const { paginatePokemonCatalog } = await import("./pokemonService.js");
 
-    const catalog: interfaces.PokemonListResponse = {
-      count: "5",
-      next: null,
-      previous: null,
-      results: [
-        {
-          name: "bulbasaur",
-          url: "https://pokeapi.co/api/v2/pokemon/1/",
-          sprite: "https://example.com/sprites/1.png",
-        },
-        {
-          name: "ivysaur",
-          url: "https://pokeapi.co/api/v2/pokemon/2/",
-          sprite: "https://example.com/sprites/2.png",
-        },
-        {
-          name: "venusaur",
-          url: "https://pokeapi.co/api/v2/pokemon/3/",
-          sprite: "https://example.com/sprites/3.png",
-        },
-        {
-          name: "charmander",
-          url: "https://pokeapi.co/api/v2/pokemon/4/",
-          sprite: "https://example.com/sprites/4.png",
-        },
-        {
-          name: "charmeleon",
-          url: "https://pokeapi.co/api/v2/pokemon/5/",
-          sprite: "https://example.com/sprites/5.png",
-        },
-      ],
+    const catalog: PokemonListItem[] = [
+      {
+        name: "bulbasaur",
+        url: "https://pokeapi.co/api/v2/pokemon/1/",
+        sprite: "https://example.com/sprites/1.png",
+      },
+      {
+        name: "ivysaur",
+        url: "https://pokeapi.co/api/v2/pokemon/2/",
+        sprite: "https://example.com/sprites/2.png",
+      },
+      {
+        name: "venusaur",
+        url: "https://pokeapi.co/api/v2/pokemon/3/",
+        sprite: "https://example.com/sprites/3.png",
+      },
+      {
+        name: "charmander",
+        url: "https://pokeapi.co/api/v2/pokemon/4/",
+        sprite: "https://example.com/sprites/4.png",
+      },
+      {
+        name: "charmeleon",
+        url: "https://pokeapi.co/api/v2/pokemon/5/",
+        sprite: "https://example.com/sprites/5.png",
+      },
+    ];
+
+    const query: QueryParams = {
+      limit: "2",
+      offset: "2",
+      sortby: "alphabetical",
     };
 
     const result = paginatePokemonCatalog(
       catalog,
-      2,
-      2,
-      "http://localhost:3000",
-      "alphabetical",
+      "http://localhost:3000/pokemons",
+      query,
     );
 
     expect(result.next).toBe(
@@ -506,50 +463,38 @@ describe("pokemonService", () => {
     );
   });
 
-  it("paginatePokemonCatalog devuelve valores por defecto para paginacion invalida", () => {
-    const { paginatePokemonCatalog } = require("./pokemonService") as {
-      paginatePokemonCatalog: (
-        catalog: interfaces.PokemonListResponse,
-        limit: number,
-        offset: number,
-        apiPublicBaseUrl: string,
-        sortBy?: "number" | "alphabetical",
-      ) => interfaces.PokemonListResponse;
-    };
+  it("paginatePokemonCatalog devuelve valores por defecto para paginacion invalida", async () => {
+    const { paginatePokemonCatalog } = await import("./pokemonService.js");
 
-    const catalog: interfaces.PokemonListResponse = {
-      count: "4",
-      next: null,
-      previous: null,
-      results: [
-        {
-          name: "bulbasaur",
-          url: "https://pokeapi.co/api/v2/pokemon/1/",
-          sprite: "https://example.com/sprites/1.png",
-        },
-        {
-          name: "ivysaur",
-          url: "https://pokeapi.co/api/v2/pokemon/2/",
-          sprite: "https://example.com/sprites/2.png",
-        },
-        {
-          name: "venusaur",
-          url: "https://pokeapi.co/api/v2/pokemon/3/",
-          sprite: "https://example.com/sprites/3.png",
-        },
-        {
-          name: "charmander",
-          url: "https://pokeapi.co/api/v2/pokemon/4/",
-          sprite: "https://example.com/sprites/4.png",
-        },
-      ],
-    };
+    const catalog: PokemonListItem[] = [
+      {
+        name: "bulbasaur",
+        url: "https://pokeapi.co/api/v2/pokemon/1/",
+        sprite: "https://example.com/sprites/1.png",
+      },
+      {
+        name: "ivysaur",
+        url: "https://pokeapi.co/api/v2/pokemon/2/",
+        sprite: "https://example.com/sprites/2.png",
+      },
+      {
+        name: "venusaur",
+        url: "https://pokeapi.co/api/v2/pokemon/3/",
+        sprite: "https://example.com/sprites/3.png",
+      },
+      {
+        name: "charmander",
+        url: "https://pokeapi.co/api/v2/pokemon/4/",
+        sprite: "https://example.com/sprites/4.png",
+      },
+    ];
+
+    const query: QueryParams = { limit: "-1", offset: "-4", sortby: "number" };
 
     const result = paginatePokemonCatalog(
       catalog,
-      -1,
-      -4,
       "http://localhost:3000",
+      query,
     );
 
     expect(result.results).toHaveLength(4);
@@ -558,7 +503,7 @@ describe("pokemonService", () => {
   });
 
   it("lanza un error si PokeAPI responde con error", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -571,17 +516,15 @@ describe("pokemonService", () => {
       ok: false,
     });
 
-    const { getPokemonList } = require("./pokemonService") as {
-      getPokemonList: () => Promise<interfaces.PokemonListResponse>;
-    };
+    const { getPokemonList } = await import("./pokemonService.js");
 
-    await expect(getPokemonList()).rejects.toThrow(
+    await expect(getPokemonList({})).rejects.toThrow(
       "Error al obtener el catalogo de pokemons",
     );
   });
 
   it("getPokemonById devuelve el pokemon con el id indicado", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -595,9 +538,7 @@ describe("pokemonService", () => {
       json: async () => pokemonResponse,
     });
 
-    const { getPokemonById } = require("./pokemonService") as {
-      getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
-    };
+    const { getPokemonById } = await import("./pokemonService.js");
 
     const result = await getPokemonById("1");
 
@@ -611,7 +552,7 @@ describe("pokemonService", () => {
   });
 
   it("getPokemonById lanza un error si PokeAPI responde con error", async () => {
-    jest.doMock("../config/env", () => ({
+    vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
         pokeApiUrl: "https://example.com/pokemon",
@@ -622,12 +563,203 @@ describe("pokemonService", () => {
 
     fetchMock.mockResolvedValue({ ok: false });
 
-    const { getPokemonById } = require("./pokemonService") as {
-      getPokemonById: (id: string) => Promise<interfaces.Pokemon>;
-    };
+    const { getPokemonById } = await import("./pokemonService.js");
 
     await expect(getPokemonById("1")).rejects.toThrow(
       "Error al obtener el pokemon",
     );
+  });
+
+  describe("searchPokemons", () => {
+    beforeEach(() => {
+      fetchMock.mockReset();
+      vi.resetModules();
+    });
+
+    it("devuelve pokemons filtrados por nombre", async () => {
+      vi.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = await import("./pokemonService.js");
+
+      const result = await searchPokemons({ name: "saur" });
+      expect(result.results.map((p) => p.name)).toEqual([
+        "bulbasaur",
+        "ivysaur",
+        "venusaur",
+      ]);
+      expect(result.count).toBe(3);
+    });
+
+    it("devuelve resultados vacíos si no hay coincidencias", async () => {
+      vi.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = await import("./pokemonService.js");
+
+      const result = await searchPokemons({ name: "pikachu" });
+      expect(result.results).toEqual([]);
+      expect(result.count).toBe(0);
+    });
+
+    it("devuelve paginación correcta", async () => {
+      vi.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = await import("./pokemonService.js");
+
+      const query: QueryParams = {
+        name: "saur",
+        limit: "2",
+        offset: "1",
+        sortby: "number",
+      };
+      const result = await searchPokemons(query);
+      expect(result.results.map((p) => p.name)).toEqual([
+        "ivysaur",
+        "venusaur",
+      ]);
+      expect(result.count).toBe(3);
+      expect(result.previous).toContain("offset=0");
+      expect(result.next).toBe(null);
+    });
+
+    it("ordena por nombre si se indica sortBy alphabetical", async () => {
+      vi.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = await import("./pokemonService.js");
+
+      const query: QueryParams = {
+        name: "saur",
+        limit: "3",
+        offset: "0",
+        sortby: "alphabetical",
+      };
+      const result = await searchPokemons(query);
+      expect(result.results.map((p) => p.name)).toEqual([
+        "bulbasaur",
+        "ivysaur",
+        "venusaur",
+      ]);
+    });
+
+    it("maneja límites y offsets inválidos", async () => {
+      vi.doMock("../config/env", () => ({
+        getEnvConfig: () => ({
+          port: 3000,
+          pokeApiUrl: "https://example.com/pokemon",
+          pokeApiSpriteUrl: "https://example.com/sprites",
+          apiPublicBaseUrl: "http://localhost:3000",
+        }),
+      }));
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          count: "3",
+          next: null,
+          previous: null,
+          results: [
+            { name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
+            { name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/" },
+            { name: "venusaur", url: "https://pokeapi.co/api/v2/pokemon/3/" },
+          ],
+        }),
+      });
+
+      const { searchPokemons } = await import("./pokemonService.js");
+
+      const query: QueryParams = {
+        name: "saur",
+        limit: "-1",
+        offset: "-5",
+        sortby: "number",
+      };
+      const result = await searchPokemons(query);
+      expect(result.results.length).toBe(3);
+      expect(result.previous).toBe(null);
+      expect(result.next).toBe(null);
+    });
   });
 });

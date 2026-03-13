@@ -1,4 +1,4 @@
-const dotenv = require("dotenv");
+import dotenv from "dotenv";
 
 type EnvConfig = {
   port: number;
@@ -36,7 +36,4 @@ function getEnvConfig(): EnvConfig {
   };
 }
 
-module.exports = {
-  loadEnvironment,
-  getEnvConfig,
-};
+export { loadEnvironment, getEnvConfig };

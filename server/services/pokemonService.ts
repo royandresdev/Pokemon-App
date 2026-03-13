@@ -1,16 +1,12 @@
-import type interfaces = require("../../shared/interfaces");
-import type { SortBy } from "../../shared/interfaces";
+import type {
+  Pokemon,
+  PokemonListItem,
+  PokemonListResponse,
+} from "../../shared/interfaces/index.js";
+import type { QueryParams } from "../../shared/interfaces/index.js";
+import { getEnvConfig } from "../config/env.js";
 
-const { getEnvConfig } = require("../config/env") as {
-  getEnvConfig: () => {
-    port: number;
-    pokeApiUrl: string;
-    pokeApiSpriteUrl: string;
-    apiPublicBaseUrl: string;
-  };
-};
-
-let pokemonCatalogCache: interfaces.PokemonListResponse | null = null;
+let pokemonCatalogInCache: PokemonListItem[] | null = null;
 
 function getPokemonIdFromUrl(url: string): string {
   const segments = url.split("/").filter(Boolean);
@@ -39,66 +35,53 @@ function mapNextToLocalApi(
 }
 
 async function getPokemonList(
-  limit: number = 20,
-  offset: number = 0,
-  sortBy: SortBy = "number",
-): Promise<interfaces.PokemonListResponse> {
+  queryParams: QueryParams,
+): Promise<PokemonListResponse> {
   const { apiPublicBaseUrl } = getEnvConfig();
 
-  if (!pokemonCatalogCache) {
-    pokemonCatalogCache = await getPokemonCatalog();
+  if (!pokemonCatalogInCache) {
+    pokemonCatalogInCache = await getPokemonCatalog();
   }
 
-  return paginatePokemonCatalog(
-    pokemonCatalogCache,
-    limit,
-    offset,
-    apiPublicBaseUrl,
-    sortBy,
-  );
+  const baseUrl = `${apiPublicBaseUrl}/pokemons`;
+
+  return paginatePokemonCatalog(pokemonCatalogInCache, baseUrl, queryParams);
 }
 
-async function getPokemonCatalog(): Promise<interfaces.PokemonListResponse> {
-  const { pokeApiUrl, pokeApiSpriteUrl, apiPublicBaseUrl } = getEnvConfig();
+async function getPokemonCatalog(): Promise<PokemonListItem[]> {
+  const { pokeApiUrl, pokeApiSpriteUrl } = getEnvConfig();
   const response = await fetch(`${pokeApiUrl}?limit=2000&offset=0`);
 
   if (!response.ok) {
     throw new Error("Error al obtener el catalogo de pokemons");
   }
 
-  const payload = (await response.json()) as interfaces.PokemonListResponse;
+  const payload = (await response.json()) as PokemonListResponse;
 
   const results = payload.results.map((pokemon) => ({
     ...pokemon,
     sprite: `${pokeApiSpriteUrl}/${getPokemonIdFromUrl(pokemon.url)}.png`,
   }));
 
-  return {
-    ...payload,
-    next: mapNextToLocalApi(payload.next, apiPublicBaseUrl),
-    results,
-  };
+  return results;
 }
 
 function paginatePokemonCatalog(
-  catalog: interfaces.PokemonListResponse,
-  limit: number,
-  offset: number,
-  apiPublicBaseUrl: string,
-  sortBy: SortBy = "number",
-): interfaces.PokemonListResponse {
-  const totalCountFromCatalog = Number(catalog.count);
-  const totalCount = Number.isFinite(totalCountFromCatalog)
-    ? totalCountFromCatalog
-    : catalog.results.length;
+  catalog: PokemonListItem[],
+  baseUrl: string,
+  queryParams: QueryParams,
+): PokemonListResponse {
+  const count = catalog.length;
 
-  const safeLimit = limit > 0 ? Math.floor(limit) : catalog.results.length;
-  const safeOffset = offset >= 0 ? Math.floor(offset) : 0;
+  const { limit = "20", offset = "0", sortby = "number" } = queryParams;
+
+  const safeLimit = Number(limit) > 0 ? Math.floor(Number(limit)) : count;
+  const safeOffset = Number(offset) >= 0 ? Math.floor(Number(offset)) : 0;
 
   // Copia de los resultados para no modificar el catálogo original
-  let sortedResults = [...catalog.results];
+  let sortedResults = [...catalog];
 
-  if (sortBy === "alphabetical") {
+  if (sortby === "alphabetical") {
     sortedResults.sort((a, b) => a.name.localeCompare(b.name));
   } else {
     sortedResults.sort((a, b) => {
@@ -111,24 +94,53 @@ function paginatePokemonCatalog(
   const results = sortedResults.slice(safeOffset, safeOffset + safeLimit);
 
   const next =
-    safeOffset + safeLimit < totalCount
-      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${safeOffset + safeLimit}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
+    safeOffset + safeLimit < count
+      ? `${baseUrl}?limit=${safeLimit}&offset=${safeOffset + safeLimit}${sortby === "alphabetical" ? "&sortBy=alphabetical" : ""}`
       : null;
 
   const previous =
     safeOffset > 0
-      ? `${apiPublicBaseUrl}/pokemons?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}${sortBy === "alphabetical" ? "&sortBy=alphabetical" : ""}`
+      ? `${baseUrl}?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}${sortby === "alphabetical" ? "&sortBy=alphabetical" : ""}`
       : null;
 
   return {
-    count: catalog.count,
+    count: count,
     next,
     previous,
     results,
   };
 }
 
-async function getPokemonById(id: string): Promise<interfaces.Pokemon> {
+async function searchPokemons(
+  queryParams: QueryParams,
+): Promise<PokemonListResponse> {
+  const { name = "" } = queryParams;
+
+  if (!pokemonCatalogInCache) {
+    pokemonCatalogInCache = await getPokemonCatalog();
+  }
+
+  const filteredResults = pokemonCatalogInCache.filter((pokemon) =>
+    pokemon.name.toLowerCase().includes(name.toLowerCase()),
+  );
+
+  const { apiPublicBaseUrl } = getEnvConfig();
+  const baseUrl = `${apiPublicBaseUrl}/pokemons/search`;
+  const paginatedResults = paginatePokemonCatalog(
+    filteredResults,
+    baseUrl,
+    queryParams,
+  );
+
+  return {
+    count: filteredResults.length,
+    next: paginatedResults.next,
+    previous: paginatedResults.previous,
+    results: paginatedResults.results,
+  };
+}
+
+async function getPokemonById(id: string): Promise<Pokemon> {
   const { pokeApiUrl } = getEnvConfig();
   const response = await fetch(`${pokeApiUrl}/${id}`);
 
@@ -136,14 +148,15 @@ async function getPokemonById(id: string): Promise<interfaces.Pokemon> {
     throw new Error("Error al obtener el pokemon");
   }
 
-  const payload = (await response.json()) as interfaces.Pokemon;
+  const payload = (await response.json()) as Pokemon;
 
   return payload;
 }
 
-module.exports = {
+export {
   getPokemonList,
-  getPokemonCatalog,
-  paginatePokemonCatalog,
   getPokemonById,
+  searchPokemons,
+  paginatePokemonCatalog,
+  getPokemonCatalog,
 };
