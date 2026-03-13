@@ -1,3 +1,5 @@
+import { createServer } from "../index.js";
+
 type AppServer = {
   listen: (
     port: number,
@@ -11,10 +13,6 @@ type AppServer = {
 async function withServer(
   fn: (baseUrl: string) => Promise<void>,
 ): Promise<void> {
-  const { createServer } = require("../index") as {
-    createServer: () => AppServer;
-  };
-
   const server = createServer().listen(0);
   const address = server.address();
 

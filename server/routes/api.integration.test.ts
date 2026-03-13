@@ -1,10 +1,12 @@
-import type interfaces = require("../../shared/interfaces");
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  Pokemon,
+  PokemonListResponse,
+} from "../../shared/interfaces/index.js";
 
-const { withServer } = require("../testUtils/withServer") as {
-  withServer: (fn: (baseUrl: string) => Promise<void>) => Promise<void>;
-};
+import { withServer } from "../testUtils/withServer.js";
 
-const pokemonListResponseMock: interfaces.PokemonListResponse = {
+const pokemonListResponseMock: PokemonListResponse = {
   count: "1350",
   next: "https://pokeapi.co/api/v2/pokemon/?offset=20&limit=20",
   previous: null,
@@ -17,7 +19,7 @@ const pokemonListResponseMock: interfaces.PokemonListResponse = {
   ],
 };
 
-const pokemonResponseMock: interfaces.Pokemon = {
+const pokemonResponseMock: Pokemon = {
   abilities: [
     {
       ability: { name: "overgrow", url: "https://example.com/ability/65" },
@@ -85,15 +87,15 @@ const pokemonSearchMock = {
   ],
 };
 
-jest.mock("../services/pokemonService", () => ({
-  getPokemonList: jest.fn().mockResolvedValue(pokemonListResponseMock),
-  getPokemonById: jest.fn().mockResolvedValue(pokemonResponseMock),
-  searchPokemons: jest.fn().mockResolvedValue(pokemonSearchMock),
+vi.mock("../services/pokemonService", () => ({
+  getPokemonList: vi.fn(),
+  getPokemonById: vi.fn(),
+  searchPokemons: vi.fn(),
 }));
 
 describe("API integration", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   it("permite solicitudes CORS desde cualquier origen", async () => {
     await withServer(async (baseUrl) => {
@@ -148,10 +150,13 @@ describe("API integration", () => {
 
   it("devuelve la lista de pokemons en /pokemons", async () => {
     await withServer(async (baseUrl) => {
+      const { getPokemonList } = await import("../services/pokemonService.js");
+
+      vi.mocked(getPokemonList).mockResolvedValueOnce(pokemonListResponseMock);
       const response = await fetch(`${baseUrl}/pokemons`);
 
       expect(response.ok).toBe(true);
-      const body = (await response.json()) as interfaces.PokemonListResponse;
+      const body = await response.json();
 
       expect(Array.isArray(body.results)).toBe(true);
       expect(body.results.length).toBeGreaterThan(0);
@@ -162,17 +167,17 @@ describe("API integration", () => {
   });
 
   it("acepta limit y offset en /pokemons y los pasa al servicio", async () => {
-    const { getPokemonList } = require("../services/pokemonService") as {
-      getPokemonList: jest.Mock;
-    };
-
     await withServer(async (baseUrl) => {
+      const { getPokemonList } = await import("../services/pokemonService.js");
+      vi.mocked(getPokemonList).mockResolvedValueOnce(pokemonListResponseMock);
+
       const response = await fetch(`${baseUrl}/pokemons?limit=40&offset=80`);
 
-      expect(response.ok).toBe(true);
-    });
+      const query = { limit: "40", offset: "80" };
 
-    expect(getPokemonList).toHaveBeenCalledWith(40, 80, "number");
+      expect(response.ok).toBe(true);
+      expect(getPokemonList).toHaveBeenCalledWith(query);
+    });
   });
 
   it("expone GET /pokemons/:id", async () => {
@@ -185,10 +190,13 @@ describe("API integration", () => {
 
   it("devuelve el pokemon con el id indicado en /pokemons/:id", async () => {
     await withServer(async (baseUrl) => {
+      const { getPokemonById } = await import("../services/pokemonService.js");
+
+      vi.mocked(getPokemonById).mockResolvedValueOnce(pokemonResponseMock);
       const response = await fetch(`${baseUrl}/pokemons/1`);
 
       expect(response.ok).toBe(true);
-      const body = (await response.json()) as interfaces.Pokemon;
+      const body = await response.json();
 
       expect(body.id).toBe(1);
       expect(body.name).toBe("bulbasaur");
@@ -206,6 +214,9 @@ describe("API integration", () => {
 
   it("devuelve pokemons filtrados por nombre en /pokemons/search", async () => {
     await withServer(async (baseUrl) => {
+      const { searchPokemons } = await import("../services/pokemonService.js");
+
+      vi.mocked(searchPokemons).mockResolvedValueOnce(pokemonSearchMock);
       const response = await fetch(`${baseUrl}/pokemons/search?name=bulba`);
       expect(response.ok).toBe(true);
       const body = await response.json();

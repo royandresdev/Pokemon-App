@@ -1,18 +1,7 @@
-const { getEnvConfig, loadEnvironment } = require("./config/env") as {
-  getEnvConfig: () => { port: number };
-  loadEnvironment: () => void;
-};
-const { createServer } = require("./app/createServer") as {
-  createServer: () => {
-    listen: (port: number, callback?: () => void) => unknown;
-  };
-};
+import { loadEnvironment, getEnvConfig } from "./config/env.js";
+import { createServer } from "./app/createServer.js";
 
 loadEnvironment();
-
-module.exports = {
-  createServer,
-};
 
 if (require.main === module) {
   const { port } = getEnvConfig();
@@ -22,3 +11,5 @@ if (require.main === module) {
     console.log(`Server listening on port ${port}`);
   });
 }
+
+export {createServer}
