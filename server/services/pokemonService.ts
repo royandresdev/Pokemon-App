@@ -153,4 +153,10 @@ async function getPokemonById(id: string): Promise<Pokemon> {
   return payload;
 }
 
-export { getPokemonList, getPokemonById, searchPokemons };
+export {
+  getPokemonList,
+  getPokemonById,
+  searchPokemons,
+  paginatePokemonCatalog,
+  getPokemonCatalog,
+};
