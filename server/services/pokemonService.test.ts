@@ -113,7 +113,7 @@ describe("pokemonService", () => {
       }),
     );
     expect(result.results).toHaveLength(1);
-    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.png");
+    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.gif");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -157,8 +157,8 @@ describe("pokemonService", () => {
       expect(typeof pokemon.sprite).toBe("string");
     });
 
-    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.png");
-    expect(result.results[1]!.sprite).toBe("https://example.com/sprites/2.png");
+    expect(result.results[0]!.sprite).toBe("https://example.com/sprites/1.gif");
+    expect(result.results[1]!.sprite).toBe("https://example.com/sprites/2.gif");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -351,7 +351,7 @@ describe("pokemonService", () => {
       "https://example.com/pokemon?limit=2000&offset=0",
     );
     expect(result).toHaveLength(2);
-    expect(result[0]!.sprite).toBe("https://example.com/sprites/1.png");
+    expect(result[0]!.sprite).toBe("https://example.com/sprites/1.gif");
   });
 
   it("getPokemonCatalog lanza error si PokeAPI falla", async () => {
