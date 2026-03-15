@@ -19,21 +19,6 @@ function getPokemonIdFromUrl(url: string): string {
   return pokemonId;
 }
 
-function mapNextToLocalApi(
-  nextUrl: string | null,
-  apiPublicBaseUrl: string,
-): string | null {
-  if (!nextUrl) {
-    return null;
-  }
-
-  const next = new URL(nextUrl);
-  const limit = next.searchParams.get("limit") ?? "20";
-  const offset = next.searchParams.get("offset") ?? "0";
-
-  return `${apiPublicBaseUrl}/pokemons?limit=${limit}&offset=${offset}`;
-}
-
 async function getPokemonList(
   queryParams: QueryParams,
 ): Promise<PokemonListResponse> {
@@ -66,6 +51,18 @@ async function getPokemonCatalog(): Promise<PokemonListItem[]> {
   return results;
 }
 
+const appendQueryParamsToUrl = (url: string, query: QueryParams): string => {
+  const urlObj = new URL(url);
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value) {
+      urlObj.searchParams.set(key, value);
+    }
+  }
+
+  return urlObj.toString();
+};
+
 function paginatePokemonCatalog(
   catalog: PokemonListItem[],
   baseUrl: string,
@@ -73,7 +70,12 @@ function paginatePokemonCatalog(
 ): PokemonListResponse {
   const count = catalog.length;
 
-  const { limit = "20", offset = "0", sortby = "number" } = queryParams;
+  const {
+    limit = "20",
+    offset = "0",
+    sortby = "number",
+    name = "",
+  } = queryParams;
 
   const safeLimit = Number(limit) > 0 ? Math.floor(Number(limit)) : count;
   const safeOffset = Number(offset) >= 0 ? Math.floor(Number(offset)) : 0;
@@ -95,12 +97,22 @@ function paginatePokemonCatalog(
 
   const next =
     safeOffset + safeLimit < count
-      ? `${baseUrl}?limit=${safeLimit}&offset=${safeOffset + safeLimit}${sortby === "alphabetical" ? "&sortBy=alphabetical" : ""}`
+      ? appendQueryParamsToUrl(baseUrl, {
+          limit: String(safeLimit),
+          offset: String(safeOffset + safeLimit),
+          sortby,
+          name,
+        })
       : null;
 
   const previous =
     safeOffset > 0
-      ? `${baseUrl}?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}${sortby === "alphabetical" ? "&sortBy=alphabetical" : ""}`
+      ? appendQueryParamsToUrl(baseUrl, {
+          limit: String(safeLimit),
+          offset: String(Math.max(safeOffset - safeLimit, 0)),
+          sortby,
+          name,
+        })
       : null;
 
   return {

@@ -211,14 +211,14 @@ describe("pokemonService", () => {
       "venusaur",
     ]);
     expect(firstPage.next).toBe(
-      "http://localhost:3000/pokemons?limit=2&offset=2",
+      "http://localhost:3000/pokemons?limit=2&offset=2&sortby=number",
     );
     expect(secondPage.previous).toBe(
-      "http://localhost:3000/pokemons?limit=2&offset=0",
+      "http://localhost:3000/pokemons?limit=2&offset=0&sortby=number",
     );
   });
 
-  it("getPokemonList ordena alfabeticamente cuando sortBy es alphabetical", async () => {
+  it("getPokemonList ordena alfabéticamente cuando sortBy es alphabetical", async () => {
     vi.doMock("../config/env", () => ({
       getEnvConfig: () => ({
         port: 3000,
@@ -408,7 +408,7 @@ describe("pokemonService", () => {
     ]);
     expect(result.next).toBe(null);
     expect(result.previous).toBe(
-      "http://localhost:3000/pokemons?limit=2&offset=0",
+      "http://localhost:3000/pokemons?limit=2&offset=0&sortby=number",
     );
   });
 
@@ -456,10 +456,10 @@ describe("pokemonService", () => {
     );
 
     expect(result.next).toBe(
-      "http://localhost:3000/pokemons?limit=2&offset=4&sortBy=alphabetical",
+      "http://localhost:3000/pokemons?limit=2&offset=4&sortby=alphabetical",
     );
     expect(result.previous).toBe(
-      "http://localhost:3000/pokemons?limit=2&offset=0&sortBy=alphabetical",
+      "http://localhost:3000/pokemons?limit=2&offset=0&sortby=alphabetical",
     );
   });
 
