@@ -107,7 +107,12 @@ function paginatePokemonCatalog(
 
   const previous =
     safeOffset > 0
-      ? `${baseUrl}?limit=${safeLimit}&offset=${Math.max(0, safeOffset - safeLimit)}${sortby === "alphabetical" ? "&sortby=alphabetical" : ""}`
+      ? appendQueryParamsToUrl(baseUrl, {
+          limit: String(safeLimit),
+          offset: String(Math.max(safeOffset - safeLimit, 0)),
+          sortby,
+          name,
+        })
       : null;
 
   return {

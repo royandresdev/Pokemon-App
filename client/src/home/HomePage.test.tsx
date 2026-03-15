@@ -10,6 +10,7 @@ afterEach(() => {
 
 describe("HomePage", () => {
   it("muestra un input de búsqueda y permite escribir", async () => {
+    vi.stubEnv("VITE_API_URL", "http://test-api");
     render(<HomePage />);
     const input = screen.getByPlaceholderText("Buscar pokémon...");
     expect(input).toBeInTheDocument();
@@ -45,7 +46,7 @@ describe("HomePage", () => {
     render(<HomePage />);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith("http://test-api/pokemons");
+      expect(fetchMock).toHaveBeenCalledWith("http://test-api/pokemons?sortby=number");
     });
 
     expect(await screen.findByText("bulbasaur")).toBeInTheDocument();
