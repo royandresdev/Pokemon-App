@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PokemonListResponse, QueryParams, SortBy } from "../../../shared/interfaces";
 import PokemonCard from "./PokemonCard";
 import { useDebounce } from "use-debounce";
+import { FaAngleDown } from "react-icons/fa6";
+import { MdCatchingPokemon } from "react-icons/md";
 
 const HomePage = () => {
   const [pokemons, setPokemons] = useState<PokemonListResponse["results"]>([]);
@@ -10,11 +12,25 @@ const HomePage = () => {
   const [sortBy, setSortBy] = useState<SortBy>("number");
   const [search, setSearch] = useState("");
   const [searchDebounced] = useDebounce(search, 300);
+  const [showFilters, setShowFilters] = useState(false);
+  const filtersRef = useRef<HTMLDivElement | null>(null);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Cerrar filtros al hacer click fuera
+  useEffect(() => {
+    if (!showFilters) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
+        setShowFilters(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFilters]);
 
   const fetchPokemonPage = useCallback(async (url: string, append: boolean) => {
     setIsLoading(true);
@@ -90,38 +106,61 @@ const HomePage = () => {
   }, [nextPageUrl, isLoading, fetchPokemonPage]);
 
   return (
-    <main>
-      <h1>Pokémon App</h1>
-      <div className="home-controls">
+    <main className="max-w-md mx-auto bg-gray-200 min-h-screen pt-4">
+      <header className="bg-white shadow p-4 mx-4 mb-6 rounded-lg">
+        <div className="flex w-full items-center justify-between">
+          <h2 className="text-2xl text-red-400 font-semibold flex items-center gap-2">
+            <MdCatchingPokemon />  Pokédex
+          </h2>
+        </div>
+      </header>
+      <div className="px-4">
+        <div className="home-controls relative">
+          <button
+            type="button"
+            onClick={() => setShowFilters((v) => !v)}
+            className="mb-4 font-semibold flex items-center gap-1"
+          >
+            {sortBy === "number" ? "Numérico" : "Alfabético"} <FaAngleDown />
+          </button>
+          {showFilters && (
+            <div
+              ref={filtersRef}
+              className="absolute top-6 left-0 bg-white border border-gray-300 rounded-lg p-4 z-10 shadow-lg"
+            >
+              <p className="w-full whitespace-nowrap mb-3">Ordenar por:</p>
+              <label className="flex gap-2">
+                <input
+                  type="radio"
+                  name="sortBy"
+                  value="number"
+                  checked={sortBy === "number"}
+                  onChange={() => setSortBy("number")}
+                />
+                Número
+              </label>
+              <label className="flex gap-2">
+                <input
+                  type="radio"
+                  name="sortBy"
+                  value="alphabetical"
+                  checked={sortBy === "alphabetical"}
+                  onChange={() => setSortBy("alphabetical")}
+                />
+                Nombre
+              </label>
+            </div>
+          )}
+        </div>
         <input
           type="text"
           placeholder="Buscar pokémon..."
           value={search}
           onChange={handleSearchChange}
-          style={{ marginRight: "1rem" }}
+          className="shadow block p-4 w-full mb-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <label>
-          <input
-            type="radio"
-            name="sortBy"
-            value="number"
-            checked={sortBy === "number"}
-            onChange={() => setSortBy("number")}
-          />
-          Orden por número
-        </label>
-        <label style={{ marginLeft: "1rem" }}>
-          <input
-            type="radio"
-            name="sortBy"
-            value="alphabetical"
-            checked={sortBy === "alphabetical"}
-            onChange={() => setSortBy("alphabetical")}
-          />
-          Orden alfabético
-        </label>
       </div>
-      <ul>
+      <ul className="grid grid-cols-3 gap-4 gap-y-6 px-4">
         {pokemons.map((pokemon) => (
           <li key={pokemon.name}>
             <PokemonCard pokemon={pokemon} />

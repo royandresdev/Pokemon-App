@@ -45,7 +45,7 @@ async function getPokemonCatalog(): Promise<PokemonListItem[]> {
 
   const results = payload.results.map((pokemon) => ({
     ...pokemon,
-    sprite: `${pokeApiSpriteUrl}/${getPokemonIdFromUrl(pokemon.url)}.png`,
+    sprite: `${pokeApiSpriteUrl}/${getPokemonIdFromUrl(pokemon.url)}.gif`,
   }));
 
   return results;
