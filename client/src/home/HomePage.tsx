@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PokemonListResponse, QueryParams, SortBy } from "../../../shared/interfaces";
 import PokemonCard from "./PokemonCard";
+import { useDebounce } from "use-debounce";
 
 const HomePage = () => {
   const [pokemons, setPokemons] = useState<PokemonListResponse["results"]>([]);
@@ -8,6 +9,8 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>("number");
   const [search, setSearch] = useState("");
+  const [searchDebounced] = useDebounce(search, 300);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
@@ -42,17 +45,17 @@ const HomePage = () => {
     const timerId = window.setTimeout(() => {
       const API_URL = import.meta.env.VITE_API_URL;
       const query: QueryParams = {
-        name: search,
+        name: searchDebounced,
         sortby: sortBy,
       };
-      const url = appendQueryParamsToUrl(`${API_URL}/${search ? "pokemons/search" : "pokemons"}`, query);
+      const url = appendQueryParamsToUrl(`${API_URL}/${searchDebounced ? "pokemons/search" : "pokemons"}`, query);
       void fetchPokemonPage(url, false);
     }, 0);
 
     return () => {
       window.clearTimeout(timerId);
     };
-  }, [fetchPokemonPage, sortBy, search]);
+  }, [fetchPokemonPage, sortBy, searchDebounced]);
 
   useEffect(() => {
     if (!nextPageUrl || isLoading || !sentinelRef.current || typeof IntersectionObserver === "undefined") {

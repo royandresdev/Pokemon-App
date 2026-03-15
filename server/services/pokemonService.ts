@@ -19,21 +19,6 @@ function getPokemonIdFromUrl(url: string): string {
   return pokemonId;
 }
 
-function mapNextToLocalApi(
-  nextUrl: string | null,
-  apiPublicBaseUrl: string,
-): string | null {
-  if (!nextUrl) {
-    return null;
-  }
-
-  const next = new URL(nextUrl);
-  const limit = next.searchParams.get("limit") ?? "20";
-  const offset = next.searchParams.get("offset") ?? "0";
-
-  return `${apiPublicBaseUrl}/pokemons?limit=${limit}&offset=${offset}`;
-}
-
 async function getPokemonList(
   queryParams: QueryParams,
 ): Promise<PokemonListResponse> {
