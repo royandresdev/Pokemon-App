@@ -64,7 +64,7 @@ describe("Router", () => {
       <RouterProvider router={router} />,
     );
 
-    expect(await screen.findByText("Pokémon App")).toBeInTheDocument();
+    expect(await screen.findByText("Pokédex")).toBeInTheDocument();
   });
 
   it("redirige a / si el usuario ya está autenticado y accede a /login", async () => {
@@ -84,6 +84,6 @@ describe("Router", () => {
       <RouterProvider router={router} />,
     );
 
-    expect(await screen.findByText("Pokémon App")).toBeInTheDocument();
+    expect(await screen.findByText("Pokédex")).toBeInTheDocument();
   });
 });
