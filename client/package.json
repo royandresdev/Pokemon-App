@@ -12,10 +12,12 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
     "formik": "^2.4.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.1",
+    "tailwindcss": "^4.2.1",
     "use-debounce": "^10.1.0"
   },
   "devDependencies": {
