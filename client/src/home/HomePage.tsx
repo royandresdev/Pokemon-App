@@ -4,6 +4,7 @@ import PokemonCard from "./PokemonCard";
 import { useDebounce } from "use-debounce";
 import { FaAngleDown } from "react-icons/fa6";
 import { MdCatchingPokemon } from "react-icons/md";
+import useDropdown from "../hooks/useDropdown";
 
 const HomePage = () => {
   const [pokemons, setPokemons] = useState<PokemonListResponse["results"]>([]);
@@ -12,25 +13,11 @@ const HomePage = () => {
   const [sortBy, setSortBy] = useState<SortBy>("number");
   const [search, setSearch] = useState("");
   const [searchDebounced] = useDebounce(search, 300);
-  const [showFilters, setShowFilters] = useState(false);
-  const filtersRef = useRef<HTMLDivElement | null>(null);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  // Cerrar filtros al hacer click fuera
-  useEffect(() => {
-    if (!showFilters) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
-        setShowFilters(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showFilters]);
 
   const fetchPokemonPage = useCallback(async (url: string, append: boolean) => {
     setIsLoading(true);
@@ -115,43 +102,7 @@ const HomePage = () => {
         </div>
       </header>
       <div className="px-4">
-        <div className="home-controls relative">
-          <button
-            type="button"
-            onClick={() => setShowFilters((v) => !v)}
-            className="mb-4 font-semibold flex items-center gap-1"
-          >
-            {sortBy === "number" ? "Numérico" : "Alfabético"} <FaAngleDown />
-          </button>
-          {showFilters && (
-            <div
-              ref={filtersRef}
-              className="absolute top-6 left-0 bg-white border border-gray-300 rounded-lg p-4 z-10 shadow-lg"
-            >
-              <p className="w-full whitespace-nowrap mb-3">Ordenar por:</p>
-              <label className="flex gap-2">
-                <input
-                  type="radio"
-                  name="sortBy"
-                  value="number"
-                  checked={sortBy === "number"}
-                  onChange={() => setSortBy("number")}
-                />
-                Número
-              </label>
-              <label className="flex gap-2">
-                <input
-                  type="radio"
-                  name="sortBy"
-                  value="alphabetical"
-                  checked={sortBy === "alphabetical"}
-                  onChange={() => setSortBy("alphabetical")}
-                />
-                Nombre
-              </label>
-            </div>
-          )}
-        </div>
+        <DropdownSortBy sortBy={sortBy} setSortBy={setSortBy} />
         <input
           type="text"
           placeholder="Buscar pokémon..."
@@ -172,4 +123,53 @@ const HomePage = () => {
   );
 };
 
+interface DropdownSortByProps {
+  sortBy: SortBy;
+  setSortBy: React.Dispatch<React.SetStateAction<SortBy>>;
+}
+
+const DropdownSortBy = ({ sortBy, setSortBy }: DropdownSortByProps) => {
+  const { dropdownIsOpen, dropdownRef, setDropdownIsOpen } = useDropdown();
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setDropdownIsOpen((v) => !v)}
+        className="mb-4 font-semibold flex items-center gap-1"
+      >
+        {sortBy === "number" ? "Numérico" : "Alfabético"} <FaAngleDown />
+      </button>
+      {dropdownIsOpen && (
+        <div
+          ref={dropdownRef}
+          className="absolute top-6 left-0 bg-white border border-gray-300 rounded-lg p-4 z-10 shadow-lg"
+        >
+          <p className="w-full whitespace-nowrap mb-3">Ordenar por:</p>
+          <label className="flex gap-2">
+            <input
+              type="radio"
+              name="sortBy"
+              value="number"
+              checked={sortBy === "number"}
+              onChange={() => setSortBy("number")}
+            />
+            Número
+          </label>
+          <label className="flex gap-2">
+            <input
+              type="radio"
+              name="sortBy"
+              value="alphabetical"
+              checked={sortBy === "alphabetical"}
+              onChange={() => setSortBy("alphabetical")}
+            />
+            Nombre
+          </label>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default HomePage;
+
