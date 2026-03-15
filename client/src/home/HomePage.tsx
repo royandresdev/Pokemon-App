@@ -19,14 +19,20 @@ const HomePage = () => {
   const fetchPokemonPage = useCallback(async (url: string, append: boolean) => {
     setIsLoading(true);
 
-    const response = await fetch(url);
-    const payload = await response.json() as PokemonListResponse;
+    try {
+      const response = await fetch(url);
+      const payload = await response.json() as PokemonListResponse;
 
-    setPokemons((currentPokemons) => (
-      append ? [...currentPokemons, ...payload.results] : payload.results
-    ));
-    setNextPageUrl(payload.next);
-    setIsLoading(false);
+      setPokemons((currentPokemons) => (
+        append ? [...currentPokemons, ...payload.results] : payload.results
+      ));
+      setNextPageUrl(payload.next);
+    } catch (error) {
+      console.error("Error fetching Pokémon data:", error);
+      setIsLoading(false);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const appendQueryParamsToUrl = (url: string, query: QueryParams): string => {
