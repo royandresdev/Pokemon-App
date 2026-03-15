@@ -51,7 +51,7 @@ describe("HomePage", () => {
 
     expect(await screen.findByText("bulbasaur")).toBeInTheDocument();
     expect(screen.getByText("ivysaur")).toBeInTheDocument();
-    expect(screen.getByText("#1")).toBeInTheDocument();
+    expect(screen.getByText("N°1")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Sprite de bulbasaur" })).toBeInTheDocument();
   });
 
@@ -138,7 +138,7 @@ describe("HomePage", () => {
     });
 
     expect(await screen.findByText("ivysaur")).toBeInTheDocument();
-    expect(screen.getByText("#2")).toBeInTheDocument();
+    expect(screen.getByText("N°2")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Sprite de ivysaur" })).toBeInTheDocument();
   });
 });
